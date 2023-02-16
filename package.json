@@ -1,0 +1,25 @@
+{
+    "name": "stl-server",
+    "version": "0.0.1",
+    "description": "Server for STL",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node dist/index.js",
+        "dev": "nodemon --exec ts-node src/index.ts",
+        "build": "tsc"
+    },
+    "author": "tgthuan2000",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/express": "^4.17.17",
+        "@types/node": "^18.13.0",
+        "nodemon": "^2.0.20",
+        "ts-node": "^10.9.1",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^4.9.5"
+    },
+    "dependencies": {
+        "express": "^4.18.2"
+    }
+}
