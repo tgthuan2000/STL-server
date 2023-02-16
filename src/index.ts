@@ -1,13 +1,13 @@
 import express, { Request, Response } from "express";
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 5000;
 
-app.get("/api", (_req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
     return res.send("Express Typescript on Vercel");
 });
 
-app.get("/api/ping", (_req: Request, res: Response) => {
+app.get("/ping", (_req: Request, res: Response) => {
     return res.send("pong 🏓");
 });
 
