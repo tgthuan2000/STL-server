@@ -3,9 +3,8 @@
     "version": "0.0.1",
     "description": "Server for STL",
     "main": "index.js",
-    "type": "module",
     "scripts": {
-        "start": "node dist/index.js",
+        "start": "nodemon dist/index.js",
         "dev": "nodemon --exec ts-node src/index.ts",
         "ts.check": "tsc --project tsconfig.json",
         "build": "rimraf dist && tsc"
