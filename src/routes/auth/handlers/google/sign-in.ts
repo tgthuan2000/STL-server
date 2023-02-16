@@ -5,6 +5,7 @@ import { ROLE } from "~/constant/role";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
 import { GET_USER_BY_ID } from "~/schema/query/auth";
+import { createAccessToken } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { credential } = req.body;
@@ -34,9 +35,12 @@ const signIn: RequestHandler = async (req, res) => {
 
         const d = await client.createIfNotExists(document);
         const _data = await client.fetch(GET_USER_BY_ID, { _id: d._id });
+        const token = createAccessToken(d._id);
+
         res.status(STATUS.SUCCESS).json({
             code: CODE.SUCCESS,
             data: _data,
+            token,
         });
     }
 };

@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
-import { comparePassword } from "~/services/auth";
+import { comparePassword, createAccessToken } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { _id, password } = req.body;
@@ -22,7 +22,9 @@ const signIn: RequestHandler = async (req, res) => {
         return;
     }
 
-    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
+    const token = createAccessToken(_id);
+
+    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS, token });
 };
 
 export default signIn;

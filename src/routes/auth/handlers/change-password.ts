@@ -3,30 +3,29 @@ import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
-import { GET_PASSWORD_BY_ID } from "~/schema/query/auth";
+import { comparePassword, getUserId } from "~/services/auth";
 
 const changePassword: RequestHandler = async (req, res) => {
-    const { _id, password } = req.body;
+    const { newPassword, oldPassword } = req.body;
+    const _id = getUserId(req);
 
-    if (!_id) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_ID });
-        return;
-    }
-    if (!password) {
+    if (!newPassword || !oldPassword) {
         res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_PASSWORD });
         return;
     }
 
-    const data = await client.fetch<{ password: string }>(GET_PASSWORD_BY_ID, {
-        _id,
-    });
-
-    const isMatch = bcrypt.compareSync(password, data.password);
+    const isMatch = await comparePassword(_id, oldPassword);
 
     if (!isMatch) {
         res.status(STATUS.SUCCESS).json({ code: CODE.INVALID_PASSWORD });
         return;
     }
+
+    const transaction = client.transaction();
+
+    transaction.patch(_id, { set: { password: bcrypt.hashSync(newPassword) } });
+
+    await transaction.commit();
 
     res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
 };

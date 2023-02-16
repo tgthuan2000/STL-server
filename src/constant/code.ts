@@ -4,6 +4,7 @@ export enum CODE {
     ERROR = "ERROR",
     WARNING = "WARNING",
     INFO = "INFO",
+    FORBIDDEN = "FORBIDDEN",
 
     /* REQUIRED */
     REQUIRED_EMAIL = "REQUIRED_EMAIL",

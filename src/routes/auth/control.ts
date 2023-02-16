@@ -1,4 +1,4 @@
-import { Control } from "~/services/controller";
+import { Control } from "~/@types/services";
 import { changePassword, checkEmail, google, signIn } from "./handlers";
 
 export const control: Control = {

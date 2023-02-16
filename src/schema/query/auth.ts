@@ -14,7 +14,7 @@ export const GET_USER_BY_EMAIL = groq`
 `;
 
 export const GET_USER_BY_ID = groq`
-    *[_type == "user" && _id == $_id] {
+    *[_type == "user" && _id == $_id][0] {
         _id,
         _createdAt,
         userName,
