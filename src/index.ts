@@ -3,8 +3,11 @@ import * as dotenv from "dotenv";
 import express from "express";
 import { auth, notification, schedule } from "~/routes";
 import { verifyToken } from "./services/auth";
+import emailjs from "@emailjs/browser";
 
 dotenv.config();
+
+emailjs.init(process.env.EMAIL_PUBLIC_KEY);
 
 const app = express();
 const port = process.env.PORT || 8000;

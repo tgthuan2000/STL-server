@@ -31,3 +31,13 @@ export const GET_PASSWORD_BY_ID = groq`
         password,
     }
 `;
+
+export const GET_USERS_ID = groq`
+    *[_type == "user"]{
+        _id,
+        userName,
+        email,
+        allowSendMail,
+        "sendMail": allowSendMail,
+    }
+`;
