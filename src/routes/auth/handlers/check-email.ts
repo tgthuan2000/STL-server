@@ -4,6 +4,7 @@ import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
 import { GET_USER_BY_EMAIL } from "~/schema/query/auth";
 
+// GLOBAL check with postman
 const checkEmail: RequestHandler = async (req, res) => {
     const { email } = req.body;
 

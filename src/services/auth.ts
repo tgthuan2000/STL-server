@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { Request, RequestHandler } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
 import { get } from "lodash";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
@@ -34,30 +34,32 @@ export const verifyToken: RequestHandler = (req, res, next) => {
 
         if (bearerToken) {
             // verifies secret and checks exp
-            jwt.verify(
-                bearerToken,
-                process.env.ACCESS_TOKEN_SECRET,
-                (err, decoded) => {
-                    if (err) {
-                        if (err.message === "jwt expired") {
-                            res.status(STATUS.FORBIDDEN).json({
-                                code: CODE.ACCESS_TOKEN_EXPIRED,
-                            });
-                            return;
-                        }
-                        // Forbidden
+
+            const handler: VerifyCallback<string | JwtPayload> = (
+                err,
+                decoded
+            ) => {
+                if (err) {
+                    if (err.message === "jwt expired") {
                         res.status(STATUS.FORBIDDEN).json({
-                            code: CODE.FORBIDDEN,
+                            code: CODE.ACCESS_TOKEN_EXPIRED,
                         });
                         return;
                     }
-
-                    // if everything is good, save to request for use in other routes
-                    // @ts-ignore
-                    req.accessToken = decoded;
-                    next();
+                    // Forbidden
+                    res.status(STATUS.FORBIDDEN).json({
+                        code: CODE.FORBIDDEN,
+                    });
+                    return;
                 }
-            );
+
+                // if everything is good, save to request for use in other routes
+                // @ts-ignore
+                req.accessToken = decoded;
+                next();
+            };
+
+            jwt.verify(bearerToken, process.env.ACCESS_TOKEN_SECRET, handler);
         }
     } else {
         // Forbidden
