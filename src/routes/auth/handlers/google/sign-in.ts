@@ -35,12 +35,12 @@ const signIn: RequestHandler = async (req, res) => {
 
         const d = await client.createIfNotExists(document);
         const _data = await client.fetch(GET_USER_BY_ID, { _id: d._id });
-        const token = createAccessToken(d._id);
+        const accessToken = createAccessToken(d._id);
 
         res.status(STATUS.SUCCESS).json({
             code: CODE.SUCCESS,
             data: _data,
-            token,
+            accessToken,
         });
     }
 };

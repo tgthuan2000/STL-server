@@ -22,9 +22,9 @@ const signIn: RequestHandler = async (req, res) => {
         return;
     }
 
-    const token = createAccessToken(_id);
+    const accessToken = createAccessToken(_id);
 
-    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS, token });
+    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS, accessToken });
 };
 
 export default signIn;

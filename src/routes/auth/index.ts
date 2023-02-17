@@ -8,11 +8,12 @@ const router = express.Router();
 
 const controllers: Controllers = {
     post: [
+        [verifyToken, "change-password"],
         "check-email",
         "google/sign-in",
         "sign-in",
-        [verifyToken, "change-password"],
     ],
+    get: [[verifyToken, "profile"]],
 };
 
 getRouters(controllers, router, control);

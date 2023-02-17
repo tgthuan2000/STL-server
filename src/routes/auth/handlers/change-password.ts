@@ -17,7 +17,7 @@ const changePassword: RequestHandler = async (req, res) => {
     const isMatch = await comparePassword(_id, oldPassword);
 
     if (!isMatch) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.INVALID_PASSWORD });
+        res.status(STATUS.SUCCESS).json({ code: CODE.INVALID_OLD_PASSWORD });
         return;
     }
 
