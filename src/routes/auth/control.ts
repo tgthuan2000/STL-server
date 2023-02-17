@@ -1,13 +1,15 @@
 import { Control } from "~/@types/services";
 import {
+    accessToken,
     changePassword,
     checkEmail,
-    profile,
     google,
+    profile,
     signIn,
 } from "./handlers";
 
 export const control: Control = {
+    "access-token": accessToken,
     "change-password": changePassword,
     "check-email": checkEmail,
     profile: profile,

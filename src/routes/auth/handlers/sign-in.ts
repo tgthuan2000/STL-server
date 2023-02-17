@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
-import { comparePassword, createAccessToken } from "~/services/auth";
+import { comparePassword, createToken } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { _id, password } = req.body;
@@ -22,9 +22,14 @@ const signIn: RequestHandler = async (req, res) => {
         return;
     }
 
-    const accessToken = createAccessToken(_id);
+    const accessToken = createToken(_id, "1h");
+    const refreshToken = createToken(_id, "720h");
 
-    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS, accessToken });
+    res.status(STATUS.SUCCESS).json({
+        code: CODE.SUCCESS,
+        accessToken,
+        refreshToken,
+    });
 };
 
 export default signIn;

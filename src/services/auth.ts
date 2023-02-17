@@ -18,9 +18,9 @@ export const comparePassword = async (_id: string, password: string) => {
     return isMatch;
 };
 
-export const createAccessToken = (_id: string) => {
+export const createToken = (_id: string, expiresIn: string | number = "1h") => {
     const token = jwt.sign({ _id }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "60m",
+        expiresIn,
     });
     return token;
 };
@@ -39,12 +39,19 @@ export const verifyToken: RequestHandler = (req, res, next) => {
                 process.env.ACCESS_TOKEN_SECRET,
                 (err, decoded) => {
                     if (err) {
+                        if (err.message === "jwt expired") {
+                            res.status(STATUS.FORBIDDEN).json({
+                                code: CODE.ACCESS_TOKEN_EXPIRED,
+                            });
+                            return;
+                        }
                         // Forbidden
                         res.status(STATUS.FORBIDDEN).json({
                             code: CODE.FORBIDDEN,
                         });
                         return;
                     }
+
                     // if everything is good, save to request for use in other routes
                     // @ts-ignore
                     req.accessToken = decoded;

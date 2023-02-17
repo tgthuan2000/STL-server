@@ -8,6 +8,7 @@ const router = express.Router();
 
 const controllers: Controllers = {
     post: [
+        "access-token",
         [verifyToken, "change-password"],
         "check-email",
         "google/sign-in",
