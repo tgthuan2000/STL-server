@@ -6,14 +6,26 @@ import { notificationService } from "~/services/notification";
 const service = notificationService();
 
 const assign: RequestHandler = async (req, res) => {
-    const { data } = req.body;
+    const { data, url } = req.body;
 
     if (!data) {
         res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_DATA });
         return;
     }
 
-    await service.setData(data).createNotify().createNotifyAssign().execute();
+    if (!url) {
+        res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_URL });
+        return;
+    }
+
+    await service
+        .transaction()
+        .setData(data)
+        .setUrl(url)
+        .createNotify()
+        .createNotifyAssign()
+        .execute();
+
     res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
 };
 
