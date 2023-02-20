@@ -8,6 +8,7 @@ export interface IUserProfile {
     google: string;
     isHasPassword: boolean;
     allowSendMail: boolean;
+    birthDay?: Date;
 }
 
 export interface AccessToken {

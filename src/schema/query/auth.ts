@@ -33,10 +33,21 @@ export const GET_PASSWORD_BY_ID = groq`
 `;
 
 export const GET_USERS_ID = groq`
-    *[_type == "user"]{
+    *[_type == "user"] {
         _id,
         userName,
         email,
+        allowSendMail,
+        "sendMail": allowSendMail,
+    }
+`;
+
+export const GET_USERS_BIRTHDAY = groq`
+    *[_type == "user" && defined(birthDay) && allowSendMail == true] {
+        _id,
+        userName,
+        email,
+        birthDay,
         allowSendMail,
         "sendMail": allowSendMail,
     }
