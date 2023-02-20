@@ -6,6 +6,7 @@ export const GET_USER_BY_EMAIL = groq`
         _createdAt,
         userName,
         email,
+        birthDay,
         image,
         google,
         "isHasPassword": defined(password),
@@ -20,6 +21,7 @@ export const GET_USER_BY_ID = groq`
         userName,
         email,
         image,
+        birthDay,
         google,
         "isHasPassword": defined(password),
         allowSendMail,
@@ -32,18 +34,19 @@ export const GET_PASSWORD_BY_ID = groq`
     }
 `;
 
-export const GET_USERS_ID = groq`
+export const GET_USERS = groq`
     *[_type == "user"] {
         _id,
         userName,
         email,
+        birthDay,
         allowSendMail,
         "sendMail": allowSendMail,
     }
 `;
 
 export const GET_USERS_BIRTHDAY = groq`
-    *[_type == "user" && defined(birthDay) && allowSendMail == true] {
+    *[_type == "user" && defined(birthDay)] {
         _id,
         userName,
         email,
