@@ -13,7 +13,7 @@ import {
 } from "~/@types/notification";
 import { transporter } from "~/plugin/email";
 import { client } from "~/plugin/sanity";
-import { GET_USERS_ID } from "~/schema/query/auth";
+import { GET_USERS } from "~/schema/query/auth";
 
 dotenv.config();
 
@@ -103,7 +103,7 @@ export const notificationService: NotificationService = () => {
 
                     if (sendAll) {
                         const users = await client.fetch<Array<UserEmail>>(
-                            GET_USERS_ID
+                            GET_USERS
                         );
                         _createNotifyAssign(users, document);
                         _createSendMail(users, sendMailDocument, (d) =>
