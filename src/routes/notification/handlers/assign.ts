@@ -1,9 +1,7 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
-import { notificationService } from "~/services/notification";
-
-const service = notificationService();
+import { notify } from "~/services/notify/template";
 
 const assign: RequestHandler = async (req, res) => {
     const { data, url } = req.body;
@@ -18,13 +16,7 @@ const assign: RequestHandler = async (req, res) => {
         return;
     }
 
-    await service
-        .transaction()
-        .setData(data)
-        .setUrl(url)
-        .createNotify()
-        .createNotifyAssign()
-        .execute();
+    await notify(data, url);
 
     res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
 };
