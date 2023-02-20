@@ -1,7 +1,7 @@
 import { Transaction } from "@sanity/client";
 import { uuid } from "@sanity/uuid";
 import dotenv from "dotenv";
-import { isEmpty } from "lodash";
+import { get, isEmpty } from "lodash";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import {
     CreateSendMail,
@@ -130,7 +130,16 @@ export const notificationService: NotificationService = () => {
         async execute() {
             await _execute();
             if (!isEmpty(_sentUsers)) {
-                Promise.all(_sentUsers);
+                Promise.allSettled(_sentUsers).then((results) => {
+                    results.forEach((result) =>
+                        console.log({
+                            status: result.status,
+                            accepted: get(result, "value.accepted", []),
+                            rejected: get(result, "value.rejected", []),
+                            time: new Date().toLocaleString(),
+                        })
+                    );
+                });
             }
             _clear();
         },
