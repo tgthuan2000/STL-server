@@ -27,24 +27,16 @@ export const scheduleService = () => {
 
     const _schedule = (user: IUserBirthDay) => {
         const { birthDay } = user;
-        const birthDayDate = new Date(birthDay);
-        const birthDayMonth = birthDayDate.getMonth();
-        const birthDayDay = birthDayDate.getDate();
-        const birthDayHour = 0;
-        const birthDayMinute = 0;
-        const birthDaySecond = 0;
+        const date = new Date(birthDay);
+        const rule = new schedule.RecurrenceRule();
+        rule.hour = 0;
+        rule.minute = 0;
+        rule.second = 0;
+        rule.date = date.getDate();
+        rule.month = date.getMonth();
 
-        const birthDaySchedule = new Date(
-            birthDayDate.getFullYear(),
-            birthDayMonth,
-            birthDayDay,
-            birthDayHour,
-            birthDayMinute,
-            birthDaySecond
-        );
-
-        schedule.scheduleJob(birthDaySchedule, async () => {
-            await notifySchedule(user);
+        const job = schedule.scheduleJob(rule, () => {
+            notifySchedule(user);
         });
     };
 
