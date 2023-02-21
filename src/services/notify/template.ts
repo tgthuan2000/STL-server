@@ -1,12 +1,13 @@
+import dotenv from "dotenv";
 import { NotifyData } from "~/@types/notification";
 import { IUserBirthDay } from "~/@types/schedule";
-import { notificationService } from ".";
+import { NotifyService } from ".";
 import { notificationTemplate } from "../email-template";
 
-const service = notificationService();
+dotenv.config();
 
 export const notify = async (data: NotifyData, url: string) => {
-    const transaction = service.transaction<NotifyData>(data);
+    const transaction = NotifyService.transaction<NotifyData>(data);
 
     transaction.createNotify((data, notifyId) => ({
         document: {
@@ -44,7 +45,7 @@ export const notify = async (data: NotifyData, url: string) => {
 };
 
 export const notifySchedule = async (data: IUserBirthDay) => {
-    const transaction = service.transaction<IUserBirthDay>(data);
+    const transaction = NotifyService.transaction<IUserBirthDay>(data);
 
     transaction.createNotify((data, notifyId) => ({
         document: {

@@ -3,8 +3,7 @@ export interface IAdminConfig {
 }
 
 export const readAdminConfig = async (): Promise<IAdminConfig> => {
-    console.log("/services/admin-config");
-    console.log("--- READ ADMIN CONFIG ---");
+    console.log("services/admin-config");
     // const config = await client.fetch(
     //     '*[_type == "adminConfig"]{canNotifyBirthday}'
     // );
