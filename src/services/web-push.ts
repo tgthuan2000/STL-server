@@ -40,22 +40,30 @@ const webPushService = (): ServiceWebPush => {
         return index;
     };
 
-    const _pushNotify = async (
-        subId: string,
-        payload?: string | Buffer,
-        options?: webPush.RequestOptions
-    ) => {
+    const _notify = (subId: string, payload: any) => {
         const sends: Array<Promise<webPush.SendResult>> = [];
         const pushSubscriptions = _subs[subId];
         if (!isEmpty(pushSubscriptions)) {
             pushSubscriptions.forEach((pushSubscription) => {
                 sends.push(
-                    webPush.sendNotification(pushSubscription, payload, options)
+                    webPush.sendNotification(
+                        pushSubscription,
+                        JSON.stringify(payload)
+                    )
                 );
             });
         }
         if (!isEmpty(sends)) {
-            return await Promise.allSettled(sends);
+            console.log("first");
+            Promise.allSettled(sends).then((results) => {
+                results.forEach((result) => {
+                    if (result.status === "fulfilled") {
+                        console.log("Notification sent successfully");
+                    } else {
+                        console.log("Notification failed");
+                    }
+                });
+            });
         }
     };
 
@@ -64,21 +72,25 @@ const webPushService = (): ServiceWebPush => {
             if (update.documentId.includes("drafts")) return;
 
             const assignNotify = update.result;
-            console.log("assignNotify", assignNotify);
 
-            // switch (update.transition) {
-            //     case "update": {
-            //         if (assignNotify) {
-            //         }
-            //         break;
-            //     }
-            //     case "appear": {
-            //         if (assignNotify) {
-            //             _pushNotify(assignNotify.user._ref);
-            //         }
-            //         break;
-            //     }
-            // }
+            switch (update.transition) {
+                case "update": {
+                    if (assignNotify) {
+                    }
+                    break;
+                }
+                case "appear": {
+                    if (assignNotify) {
+                        _notify(assignNotify.user._ref, {
+                            title: "Thông báo",
+                            body: "Alo! Bạn mới có thông báo á!",
+                            tag: "notify",
+                            url: `/notify/${assignNotify.notify._ref}`,
+                        });
+                    }
+                    break;
+                }
+            }
         });
     };
 
