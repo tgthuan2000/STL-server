@@ -5,15 +5,10 @@ import { client } from "~/plugin/sanity";
 import { GET_USERS_BIRTHDAY } from "~/schema/query/auth";
 import { notifySchedule } from "./notify/template";
 
-interface Job {
-    _id: string;
-    job: schedule.Job;
-}
-export const scheduleService = () => {
+const scheduleService = () => {
     console.log("services/schedule");
-    console.log("--- SCHEDULE SERVICE ---");
 
-    const _jobs: Array<Job> = [];
+    const _jobs: { [x: string]: schedule.Job } = {};
 
     const _getUsers = async () => {
         return await client.fetch<IUserBirthDay[]>(GET_USERS_BIRTHDAY);
@@ -48,12 +43,10 @@ export const scheduleService = () => {
                     break;
                 case "update":
                     if (user?.birthDay) {
-                        const job = checkInJobs(user._id);
+                        const job = _checkInJobs(user._id);
                         if (job) {
                             const newBirthDay = new Date(user.birthDay);
-                            const oldBirthDay = new Date(
-                                job.job.nextInvocation()
-                            );
+                            const oldBirthDay = new Date(job.nextInvocation());
                             if (newBirthDay !== oldBirthDay) {
                                 _removeJob(user._id);
                                 _schedule(_getScheduleData(user));
@@ -65,7 +58,7 @@ export const scheduleService = () => {
                     _removeJob(update.documentId);
                     break;
             }
-            _logJob();
+            // _logJob();
         });
     };
 
@@ -83,38 +76,42 @@ export const scheduleService = () => {
             notifySchedule(user);
         });
 
-        _pushJob({ _id: user._id, job });
+        _pushJob(user._id, job);
     };
 
-    const _pushJob = (data: Job) => {
-        _jobs.push(data);
+    const _pushJob = (key: string, job: schedule.Job) => {
+        _jobs[key] = job;
     };
 
     const _removeJob = (_id: string) => {
-        const index = _jobs.findIndex((job) => job._id === _id);
-        if (index !== -1) {
-            _jobs[index].job.cancel();
-            _jobs.splice(index, 1);
+        const job = _jobs[_id];
+        if (job) {
+            _jobs[_id].cancel();
+            delete _jobs[_id];
         }
     };
 
-    const checkInJobs = (_id: string) => {
-        return _jobs.find((job) => job._id === _id);
+    const _checkInJobs = (_id: string) => {
+        return _jobs[_id];
     };
 
     const _logJob = () => {
-        _jobs.forEach((job) => {
-            console.log(job._id, job.job.nextInvocation().toISOString());
+        Object.keys(_jobs).forEach((key) => {
+            console.log(key, _jobs[key].nextInvocation().toISOString());
         });
     };
 
     return {
-        birthDayNotification: async () => {
-            console.log("--- BIRTHDAY NOTIFICATION ---");
-            const users = await _getUsers();
-            _scheduleNotify(users);
-            _watchNewUsers();
-            _logJob();
+        watchBirthDay: () => {
+            console.log("--- SCHEDULE BIRTHDAY NOTIFY");
+
+            _getUsers().then((users) => {
+                _scheduleNotify(users);
+                _watchNewUsers();
+                // _logJob();
+            });
         },
     };
 };
+
+export const ScheduleService = scheduleService();

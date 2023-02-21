@@ -17,9 +17,8 @@ import { GET_USERS } from "~/schema/query/auth";
 
 dotenv.config();
 
-export const notificationService: NotificationService = () => {
-    console.log("/services/notify");
-    console.log("--- NOTIFICATION SERVICE ---");
+const notifyService: NotificationService = () => {
+    console.log("services/notify");
 
     const service: NotificationResult = {
         transaction<T>(data: T) {
@@ -138,3 +137,5 @@ export const notificationService: NotificationService = () => {
 
     return service;
 };
+
+export const NotifyService = notifyService();
