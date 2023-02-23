@@ -10,6 +10,7 @@ const controllers: Controllers = {
     post: [
         "access-token",
         [verifyToken, "change-password"],
+        [verifyToken, "set-password"],
         "check-email",
         "google/sign-in",
         "sign-in",

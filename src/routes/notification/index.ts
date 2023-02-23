@@ -7,7 +7,10 @@ import { control } from "./control";
 const router = express.Router();
 
 const controllers: Controllers = {
-    post: [[verifyToken, "assign"]],
+    post: [
+        [verifyToken, "assign"],
+        [verifyToken, "web-push"],
+    ],
 };
 
 getRouters(controllers, router, control);
