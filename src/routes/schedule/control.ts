@@ -1,3 +1,7 @@
-import { Control } from "~/@types/services";
+import { RequestControl } from "~/@types/services";
 
-export const control: Control = {};
+export const control: RequestControl = {
+    get: {},
+    post: {},
+    delete: {},
+};

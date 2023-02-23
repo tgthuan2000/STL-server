@@ -35,6 +35,13 @@ const signIn: RequestHandler = async (req, res) => {
 
         const d = await client.createIfNotExists(document);
         const _data = await client.fetch(GET_USER_BY_ID, { _id: d._id });
+
+        // check 2fa
+        if (_data.twoFA) {
+            res.status(STATUS.SUCCESS).json({ code: CODE.CHECK_2FA });
+            return;
+        }
+
         const accessToken = createToken(d._id, "1h");
         const refreshToken = createToken(d._id, "720h");
 

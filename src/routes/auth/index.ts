@@ -10,11 +10,18 @@ const controllers: Controllers = {
     post: [
         "access-token",
         [verifyToken, "change-password"],
+        [verifyToken, "set-password"],
         "check-email",
         "google/sign-in",
         "sign-in",
+        [verifyToken, "verify-2fa"],
+        "2fa",
     ],
-    get: [[verifyToken, "profile"]],
+    get: [
+        [verifyToken, "profile"],
+        [verifyToken, "2fa"],
+    ],
+    delete: [],
 };
 
 getRouters(controllers, router, control);

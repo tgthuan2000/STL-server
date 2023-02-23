@@ -1,6 +1,11 @@
-import { Control } from "~/@types/services";
-import { assign } from "./handlers";
+import { RequestControl } from "~/@types/services";
+import { assign, webPush } from "./handlers/post";
 
-export const control: Control = {
-    assign: assign,
+export const control: RequestControl = {
+    post: {
+        assign: assign,
+        "web-push": webPush,
+    },
+    get: {},
+    delete: {},
 };
