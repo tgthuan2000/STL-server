@@ -5,7 +5,7 @@ import { client } from "~/plugin/sanity";
 import { GET_USERS_BIRTHDAY } from "~/schema/query/auth";
 import { notifySchedule } from "./notify/template";
 
-const scheduleService = () => {
+export const ScheduleService = (() => {
     console.log("services/schedule");
 
     const _jobs: { [x: string]: schedule.Job } = {};
@@ -112,6 +112,4 @@ const scheduleService = () => {
             });
         },
     };
-};
-
-export const ScheduleService = scheduleService();
+})();

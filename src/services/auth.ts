@@ -6,7 +6,7 @@ import { get } from "lodash";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
-import { GET_PASSWORD_BY_ID } from "~/schema/query/auth";
+import { GET_PASSWORD_BY_ID, GET_USER_EMAIL_BY_ID } from "~/schema/query/auth";
 
 dotenv.config();
 
@@ -70,4 +70,9 @@ export const verifyToken: RequestHandler = (req, res, next) => {
 export const getUserId = (req: Request) => {
     // @ts-ignore
     return get(req, "accessToken._id", null);
+};
+
+export const getUserEmail = async (_id: string) => {
+    const data = await client.fetch(GET_USER_EMAIL_BY_ID, { _id });
+    return data;
 };

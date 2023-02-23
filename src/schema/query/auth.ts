@@ -28,6 +28,10 @@ export const GET_USER_BY_ID = groq`
     }
 `;
 
+export const GET_USER_EMAIL_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0].email
+`;
+
 export const GET_PASSWORD_BY_ID = groq`
     *[_type == "user" && _id == $_id][0] {
         password,

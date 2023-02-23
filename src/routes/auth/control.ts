@@ -7,6 +7,8 @@ import {
     profile,
     setPassword,
     signIn,
+    verify2FA,
+    _2FA,
 } from "./handlers";
 
 export const control: Control = {
@@ -17,4 +19,6 @@ export const control: Control = {
     profile: profile,
     "google/sign-in": google.signIn,
     "sign-in": signIn,
+    "verify-2fa": verify2FA,
+    "2fa": _2FA,
 };
