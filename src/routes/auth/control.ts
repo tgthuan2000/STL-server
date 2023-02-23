@@ -8,7 +8,7 @@ import {
     setPassword,
     signIn,
     verify2FA,
-    _2FA as Post_2FA,
+    _2FA as post_2FA,
 } from "./handlers/post";
 
 export const control: RequestControl = {
@@ -20,7 +20,7 @@ export const control: RequestControl = {
         "google/sign-in": google.signIn,
         "verify-2fa": verify2FA,
         "sign-in": signIn,
-        "2fa": Post_2FA,
+        "2fa": post_2FA,
     },
     get: {
         profile: profile,

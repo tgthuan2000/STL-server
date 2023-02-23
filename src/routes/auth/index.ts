@@ -15,7 +15,7 @@ const controllers: Controllers = {
         "google/sign-in",
         "sign-in",
         [verifyToken, "verify-2fa"],
-        [verifyToken, "2fa"],
+        "2fa",
     ],
     get: [
         [verifyToken, "profile"],

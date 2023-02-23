@@ -9,6 +9,8 @@ export interface IUserProfile {
     isHasPassword: boolean;
     allowSendMail: boolean;
     birthDay?: Date;
+    twoFA: boolean;
+    base32: string;
 }
 
 export interface AccessToken {
