@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import QRCode from "qrcode";
 import speakeasy from "speakeasy";
 import { Service2FA } from "~/@types/2fa";
+import { client } from "~/plugin/sanity";
 
 dotenv.config();
 
@@ -16,11 +17,35 @@ export const TwoFA = (() => {
         return secret;
     };
 
+    const _saveSanity = async (id: string, base32: string) => {
+        const data = await client
+            .patch(id)
+            .set({ twoFA: true, base32 })
+            .commit();
+
+        _clearSecret(id);
+        return data;
+    };
+
+    const _disabledTwoFA = async (id: string) => {
+        const data = await client
+            .patch(id)
+            .set({ twoFA: false, base32: null })
+            .commit();
+
+        _clearSecret(id);
+        return data;
+    };
+
+    const _clearSecret = (id: string) => {
+        delete _secrets[id];
+    };
+
     const _saveUserBase32 = (id: string, base32: string) => {
         _secrets[id] = base32;
     };
 
-    const _getUserBase32 = (id: string): string => {
+    const _getUserBase32 = (id: string) => {
         return _secrets[id];
     };
 
@@ -50,10 +75,6 @@ export const TwoFA = (() => {
         return verified;
     };
 
-    const _log = () => {
-        console.log(_secrets);
-    };
-
     const service: Service2FA = {
         generateSecret(userName) {
             return _generateSecret(userName);
@@ -73,8 +94,11 @@ export const TwoFA = (() => {
         verifyToken(token, base32) {
             return _verifyToken(token, base32);
         },
-        log() {
-            _log();
+        saveSanity(id, base32) {
+            return _saveSanity(id, base32);
+        },
+        disabledTwoFA(id) {
+            return _disabledTwoFA(id);
         },
     };
     return service;

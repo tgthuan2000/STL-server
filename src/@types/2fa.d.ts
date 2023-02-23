@@ -1,3 +1,4 @@
+import { SanityDocument } from "@sanity/client";
 import speakeasy from "speakeasy";
 
 export interface Service2FA {
@@ -10,5 +11,9 @@ export interface Service2FA {
     };
     generateQRCode: (otpAuthUrl: string) => Promise<string>;
     verifyToken: (token: string, base32: string) => boolean;
-    log: () => void;
+    saveSanity: (
+        id: string,
+        base32: string
+    ) => Promise<SanityDocument<Record<string, any>>>;
+    disabledTwoFA: (id: string) => Promise<SanityDocument<Record<string, any>>>;
 }

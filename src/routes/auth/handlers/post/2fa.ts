@@ -5,7 +5,7 @@ import { TwoFA } from "~/services/2fa";
 import { getUserId } from "~/services/auth";
 
 // GLOBAL check with postman
-const verify2FA: RequestHandler = async (req, res) => {
+const _2FA: RequestHandler = async (req, res) => {
     const { code } = req.body;
     const id = getUserId(req);
 
@@ -24,6 +24,8 @@ const verify2FA: RequestHandler = async (req, res) => {
     const verified = TwoFA.verifyToken("" + code, base32);
 
     if (verified) {
+        const log = await TwoFA.saveSanity(id, base32);
+        console.log(log);
         const backupCodes = TwoFA.generateBackupCodes(base32);
         res.status(STATUS.SUCCESS).json({
             code: CODE.SUCCESS,
@@ -35,4 +37,4 @@ const verify2FA: RequestHandler = async (req, res) => {
 
     res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS, verified });
 };
-export default verify2FA;
+export default _2FA;

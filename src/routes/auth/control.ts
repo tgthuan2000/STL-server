@@ -1,24 +1,30 @@
-import { Control } from "~/@types/services";
+import { RequestControl } from "~/@types/services";
+import { profile, _2FA } from "./handlers/get";
 import {
     accessToken,
     changePassword,
     checkEmail,
     google,
-    profile,
     setPassword,
     signIn,
     verify2FA,
-    _2FA,
-} from "./handlers";
+    _2FA as Post_2FA,
+} from "./handlers/post";
 
-export const control: Control = {
-    "access-token": accessToken,
-    "change-password": changePassword,
-    "set-password": setPassword,
-    "check-email": checkEmail,
-    profile: profile,
-    "google/sign-in": google.signIn,
-    "sign-in": signIn,
-    "verify-2fa": verify2FA,
-    "2fa": _2FA,
+export const control: RequestControl = {
+    post: {
+        "access-token": accessToken,
+        "change-password": changePassword,
+        "set-password": setPassword,
+        "check-email": checkEmail,
+        "google/sign-in": google.signIn,
+        "verify-2fa": verify2FA,
+        "sign-in": signIn,
+        "2fa": Post_2FA,
+    },
+    get: {
+        profile: profile,
+        "2fa": _2FA,
+    },
+    delete: {},
 };

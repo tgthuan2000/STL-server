@@ -6,7 +6,12 @@ import { get } from "lodash";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
-import { GET_PASSWORD_BY_ID, GET_USER_EMAIL_BY_ID } from "~/schema/query/auth";
+import {
+    GET_PASSWORD_BY_ID,
+    GET_USER_2FA_BY_ID,
+    GET_USER_BASE32_2FA_BY_ID,
+    GET_USER_EMAIL_BY_ID,
+} from "~/schema/query/auth";
 
 dotenv.config();
 
@@ -73,6 +78,16 @@ export const getUserId = (req: Request) => {
 };
 
 export const getUserEmail = async (_id: string) => {
-    const data = await client.fetch(GET_USER_EMAIL_BY_ID, { _id });
+    const data = await client.fetch<string>(GET_USER_EMAIL_BY_ID, { _id });
+    return data;
+};
+
+export const getUserBase32TwoFA = async (_id: string) => {
+    const data = await client.fetch<string>(GET_USER_BASE32_2FA_BY_ID, { _id });
+    return data;
+};
+
+export const getUserTwoFA = async (_id: string) => {
+    const data = await client.fetch<string>(GET_USER_2FA_BY_ID, { _id });
     return data;
 };
