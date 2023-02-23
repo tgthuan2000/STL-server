@@ -11,6 +11,7 @@ export const GET_USER_BY_EMAIL = groq`
         google,
         "isHasPassword": defined(password),
         allowSendMail,
+        twoFA
     }
 `;
 
@@ -25,7 +26,31 @@ export const GET_USER_BY_ID = groq`
         google,
         "isHasPassword": defined(password),
         allowSendMail,
+        twoFA
     }
+`;
+
+export const GET_USER_EMAIL_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0].email
+`;
+
+export const GET_USER_BASE32_2FA_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0].base32
+`;
+
+export const GET_USER_2FA_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0].twoFA
+`;
+
+export const GET_BASE32_BY_EMAIL = groq`
+    *[_type == "user" && email == $email][0]{
+        base32,
+        _id
+    }
+`;
+
+export const GET_BASE32_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0].base32
 `;
 
 export const GET_PASSWORD_BY_ID = groq`

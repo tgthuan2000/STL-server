@@ -5,7 +5,11 @@ import { control } from "./control";
 
 const router = express.Router();
 
-const controllers: Controllers = {};
+const controllers: Controllers = {
+    post: [],
+    get: [],
+    delete: [],
+};
 
 getRouters(controllers, router, control);
 

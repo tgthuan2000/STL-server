@@ -1,23 +1,27 @@
 import { RequestHandler, Router } from "express";
-import { Control, Controllers } from "~/@types/services";
+import { Controllers, RequestControl } from "~/@types/services";
 
-const getControl = (control: Control, item: string | RequestHandler) => {
-    return typeof item === "string" ? control[item] : item;
+const getControl = (
+    control: RequestControl,
+    key: "post" | "get" | "delete",
+    item: string | RequestHandler
+) => {
+    return typeof item === "string" ? control[key][item] : item;
 };
 
 export const getRouters = (
     controllers: Controllers,
     router: Router,
-    control: Control
+    control: RequestControl
 ) => {
     Object.keys(controllers).forEach((key: "post" | "get" | "delete") => {
         controllers[key].forEach((item) => {
             const { path, handlers } = Array.isArray(item)
                 ? {
                       path: item[item.length - 1],
-                      handlers: item.map((i) => getControl(control, i)),
+                      handlers: item.map((i) => getControl(control, key, i)),
                   }
-                : { path: item, handlers: [getControl(control, item)] };
+                : { path: item, handlers: [getControl(control, key, item)] };
 
             router[key](`/${path}`, ...handlers);
         });

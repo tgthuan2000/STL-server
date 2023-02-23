@@ -10,7 +10,7 @@ import { client } from "~/plugin/sanity";
 import webPush from "~/plugin/web-push";
 import { SUBSCRIPTION_NOTIFY } from "~/schema/query/notify";
 
-const webPushService = (): ServiceWebPush => {
+export const WebPushService = ((): ServiceWebPush => {
     console.log("services/web-push");
 
     const _subs: Subs = {};
@@ -107,6 +107,4 @@ const webPushService = (): ServiceWebPush => {
     };
 
     return services;
-};
-
-export const WebPushService = webPushService();
+})();

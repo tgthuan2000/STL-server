@@ -11,6 +11,8 @@ const controllers: Controllers = {
         [verifyToken, "assign"],
         [verifyToken, "web-push"],
     ],
+    get: [],
+    delete: [],
 };
 
 getRouters(controllers, router, control);

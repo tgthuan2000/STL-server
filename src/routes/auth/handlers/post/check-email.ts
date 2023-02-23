@@ -13,7 +13,7 @@ const checkEmail: RequestHandler = async (req, res) => {
         return;
     }
 
-    const data = await client.fetch<{ password: string }>(GET_USER_BY_EMAIL, {
+    const data = await client.fetch(GET_USER_BY_EMAIL, {
         email,
     });
 
