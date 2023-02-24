@@ -20,6 +20,7 @@ const _2FA: RequestHandler = async (req, res) => {
 
     res.status(STATUS.SUCCESS).json({
         code: CODE.SUCCESS,
+        secret: secret.base32,
         otpAuthUrl: secret.otpauth_url,
     });
 };
