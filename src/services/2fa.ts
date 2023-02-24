@@ -12,6 +12,8 @@ export const TwoFA = (() => {
     const _generateSecret = (email?: string) => {
         const secret = speakeasy.generateSecret({
             name: process.env.TWO_FA_APP_NAME + (email ? ` (${email})` : ""),
+            issuer: process.env.TWO_FA_APP_NAME,
+            length: 12,
         });
         return secret;
     };
@@ -66,6 +68,8 @@ export const TwoFA = (() => {
             encoding: "base32",
             token,
             window: 2,
+            digits: 6,
+            algorithm: "sha1",
         });
         return verified;
     };
