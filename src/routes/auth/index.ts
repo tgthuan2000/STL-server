@@ -14,8 +14,15 @@ const controllers: Controllers = {
         "check-email",
         "google/sign-in",
         "sign-in",
+        [verifyToken, "verify-2fa"],
+        "2fa",
+        [verifyToken, "disabled-2fa"],
     ],
-    get: [[verifyToken, "profile"]],
+    get: [
+        [verifyToken, "profile"],
+        [verifyToken, "2fa"],
+    ],
+    delete: [],
 };
 
 getRouters(controllers, router, control);

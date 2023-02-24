@@ -7,7 +7,6 @@ import {
     CreateNotifyAssign,
     CreateSendMail,
     NotificationResult,
-    NotificationService,
     NotifyTransaction,
     UserEmail,
 } from "~/@types/notification";
@@ -17,7 +16,7 @@ import { GET_USERS } from "~/schema/query/auth";
 
 dotenv.config();
 
-const notifyService: NotificationService = () => {
+export const NotifyService = (() => {
     console.log("services/notify");
 
     const service: NotificationResult = {
@@ -136,6 +135,4 @@ const notifyService: NotificationService = () => {
     };
 
     return service;
-};
-
-export const NotifyService = notifyService();
+})();
