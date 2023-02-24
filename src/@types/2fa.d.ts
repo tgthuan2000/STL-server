@@ -9,7 +9,6 @@ export interface Service2FA {
         backupCodes: string[];
         hashedBackupCodes: string[];
     };
-    generateQRCode: (otpAuthUrl: string) => Promise<string>;
     verifyToken: (token: string, base32: string) => boolean;
     saveSanity: (
         id: string,

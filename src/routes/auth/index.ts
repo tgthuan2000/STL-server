@@ -16,6 +16,7 @@ const controllers: Controllers = {
         "sign-in",
         [verifyToken, "verify-2fa"],
         "2fa",
+        [verifyToken, "disabled-2fa"],
     ],
     get: [
         [verifyToken, "profile"],

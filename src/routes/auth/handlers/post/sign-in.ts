@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { client } from "~/plugin/sanity";
+import { GET_USER_2FA_BY_ID } from "~/schema/query/auth";
 import { comparePassword, createToken, getUserTwoFA } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
@@ -23,9 +25,9 @@ const signIn: RequestHandler = async (req, res) => {
     }
 
     // check 2fa
-    const enabled = await getUserTwoFA(_id);
+    const twoFA = await getUserTwoFA(_id);
 
-    if (enabled) {
+    if (twoFA) {
         res.status(STATUS.SUCCESS).json({ code: CODE.CHECK_2FA });
         return;
     }
