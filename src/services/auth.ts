@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import { Request, RequestHandler } from "express";
 import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
 import { get } from "lodash";
-import { IUserProfile } from "~/@types/auth";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
@@ -13,8 +12,8 @@ import {
     GET_PASSWORD_BY_ID,
     GET_USER_2FA_BY_ID,
     GET_USER_BASE32_2FA_BY_ID,
-    GET_USER_BY_EMAIL,
     GET_USER_EMAIL_BY_ID,
+    GET_USER_ID_BASE32_BY_EMAIL,
 } from "~/schema/query/auth";
 
 dotenv.config();
@@ -111,7 +110,12 @@ export const getBase32ById = async (_id: string) => {
     return data;
 };
 
-export const getUserByEmail = async (email: string) => {
-    const data = await client.fetch<IUserProfile>(GET_USER_BY_EMAIL, { email });
+export const getUserIdBase32ByEmail = async (email: string) => {
+    const data = await client.fetch<{ _id: string; base32: string | null }>(
+        GET_USER_ID_BASE32_BY_EMAIL,
+        {
+            email,
+        }
+    );
     return data;
 };

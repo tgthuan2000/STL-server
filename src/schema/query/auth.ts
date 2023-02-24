@@ -15,6 +15,13 @@ export const GET_USER_BY_EMAIL = groq`
     }
 `;
 
+export const GET_USER_ID_BASE32_BY_EMAIL = groq`
+    *[_type == "user" && email == $email] {
+        _id,
+        base32
+    }
+`;
+
 export const GET_USER_BY_ID = groq`
     *[_type == "user" && _id == $_id][0] {
         _id,

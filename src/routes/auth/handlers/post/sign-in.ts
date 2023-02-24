@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { client } from "~/plugin/sanity";
+import { GET_USER_BY_ID } from "~/schema/query/auth";
 import { comparePassword, createToken, getUserTwoFA } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
@@ -30,6 +32,7 @@ const signIn: RequestHandler = async (req, res) => {
         return;
     }
 
+    const data = await client.fetch(GET_USER_BY_ID, { _id });
     const accessToken = createToken(_id, "1h");
     const refreshToken = createToken(_id, "720h");
 
@@ -37,6 +40,7 @@ const signIn: RequestHandler = async (req, res) => {
         code: CODE.SUCCESS,
         accessToken,
         refreshToken,
+        data,
     });
 };
 

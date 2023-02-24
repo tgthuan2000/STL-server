@@ -1,17 +1,16 @@
 import { RequestHandler } from "express";
 import jwtDecode from "jwt-decode";
-import { IUserProfile } from "~/@types/auth";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { client } from "~/plugin/sanity";
+import { GET_USER_BY_ID } from "~/schema/query/auth";
 import { TwoFA } from "~/services/2fa";
 import {
     createToken,
-    getBase32UserIdByEmail,
     getBase32ById,
-    getUserByEmail,
+    getUserIdBase32ByEmail,
 } from "~/services/auth";
 
-// GLOBAL check with postman
 const _2FA: RequestHandler = async (req, res) => {
     const { _id, code, credential } = req.body;
 
@@ -22,7 +21,8 @@ const _2FA: RequestHandler = async (req, res) => {
 
     let base32: string | null = null;
     let id: string | null = null;
-    let infoUser: IUserProfile | undefined = undefined;
+    let infoUser: { _id: string; base32: string | null } | undefined =
+        undefined;
 
     if (_id) {
         try {
@@ -35,7 +35,7 @@ const _2FA: RequestHandler = async (req, res) => {
     if (credential) {
         try {
             const decoded = jwtDecode(credential) as any;
-            infoUser = await getUserByEmail(decoded.email);
+            infoUser = await getUserIdBase32ByEmail(decoded.email);
             if (infoUser) {
                 const { _id, base32: _base32 } = infoUser;
                 base32 = _base32;
@@ -58,11 +58,12 @@ const _2FA: RequestHandler = async (req, res) => {
         const accessToken = createToken(id, "1h");
         const refreshToken = createToken(id, "720h");
 
+        const data = await client.fetch(GET_USER_BY_ID, { _id: id });
         res.status(STATUS.SUCCESS).json({
             code: CODE.SUCCESS,
             accessToken,
             refreshToken,
-            infoUser,
+            data,
         });
 
         return;

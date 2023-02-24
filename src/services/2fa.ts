@@ -1,6 +1,5 @@
 import AES from "crypto-js/aes";
 import dotenv from "dotenv";
-import QRCode from "qrcode";
 import speakeasy from "speakeasy";
 import { Service2FA } from "~/@types/2fa";
 import { client } from "~/plugin/sanity";
@@ -61,10 +60,6 @@ export const TwoFA = (() => {
         return { backupCodes, hashedBackupCodes };
     };
 
-    const _generateQRCode = (otpAuthUrl: string) => {
-        return QRCode.toDataURL(otpAuthUrl);
-    };
-
     const _verifyToken = (token: string, base32: string) => {
         const verified = speakeasy.totp.verify({
             secret: base32,
@@ -87,9 +82,6 @@ export const TwoFA = (() => {
         },
         generateBackupCodes(base32) {
             return _generateBackupCodes(base32);
-        },
-        generateQRCode(otpAuthUrl) {
-            return _generateQRCode(otpAuthUrl);
         },
         verifyToken(token, base32) {
             return _verifyToken(token, base32);
