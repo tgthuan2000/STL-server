@@ -13,7 +13,7 @@ import {
     GET_USER_2FA_BY_ID,
     GET_USER_BASE32_2FA_BY_ID,
     GET_USER_EMAIL_BY_ID,
-    GET_USER_ID_BASE32_BY_EMAIL,
+    GET_USER_ID_BASE32_BY_ID,
 } from "~/schema/query/auth";
 
 dotenv.config();
@@ -110,12 +110,10 @@ export const getBase32ById = async (_id: string) => {
     return data;
 };
 
-export const getUserIdBase32ByEmail = async (email: string) => {
+export const getUserIdBase32ById = async (_id: string) => {
     const data = await client.fetch<{ _id: string; base32: string | null }>(
-        GET_USER_ID_BASE32_BY_EMAIL,
-        {
-            email,
-        }
+        GET_USER_ID_BASE32_BY_ID,
+        { _id }
     );
     return data;
 };
