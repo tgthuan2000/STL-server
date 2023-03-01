@@ -18,12 +18,8 @@ export const TwoFA = (() => {
         return secret;
     };
 
-    const _saveSanity = async (id: string, base32: string) => {
-        const data = await client
-            .patch(id)
-            .set({ twoFA: true, base32 })
-            .commit();
-
+    const _saveSanity = (id: string, base32: string) => {
+        const data = client.patch(id).set({ twoFA: true, base32 });
         _clearSecret(id);
         return data;
     };

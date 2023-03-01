@@ -6,6 +6,7 @@ import {
     checkEmail,
     disabled2FA,
     google,
+    logout,
     setPassword,
     signIn,
     verify2FA,
@@ -23,6 +24,7 @@ export const control: RequestControl = {
         "sign-in": signIn,
         "2fa": post_2FA,
         "disabled-2fa": disabled2FA,
+        logout: logout,
     },
     get: {
         profile: profile,

@@ -1,9 +1,12 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
-import { client } from "~/plugin/sanity";
-import { GET_USER_2FA_BY_ID } from "~/schema/query/auth";
-import { comparePassword, createToken, getUserTwoFA } from "~/services/auth";
+import {
+    comparePassword,
+    createToken,
+    getUserTwoFA,
+    saveToken,
+} from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { _id, password } = req.body;
@@ -34,6 +37,8 @@ const signIn: RequestHandler = async (req, res) => {
 
     const accessToken = createToken(_id, "1h");
     const refreshToken = createToken(_id, "720h");
+
+    await saveToken(_id, { accessToken, refreshToken });
 
     res.status(STATUS.SUCCESS).json({
         code: CODE.SUCCESS,
