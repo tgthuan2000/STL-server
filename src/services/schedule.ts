@@ -7,6 +7,7 @@ import { client } from "~/plugin/sanity";
 import {
     GET_USERS_ACCESS_TOKEN,
     GET_USERS_BIRTHDAY,
+    GET_USERS_REFRESH_TOKEN,
 } from "~/schema/query/auth";
 import { notifySchedule } from "./notify/template";
 
@@ -118,12 +119,41 @@ export const ScheduleService = (() => {
                     if (activeTokens) {
                         const update = client
                             .patch(user._id)
-                            .setIfMissing({ activeTokens: [] });
+                            .setIfMissing({ accessToken: [] });
 
                         if (isEmpty(activeTokens)) {
-                            update.unset(["activeTokens"]);
+                            update.unset(["accessToken"]);
                         } else {
-                            update.set({ activeTokens });
+                            update.set({ accessToken: activeTokens });
+                        }
+
+                        transaction.patch(update);
+                    }
+                });
+                console.log(transaction.toJSON());
+                await transaction.commit();
+            }
+        });
+    };
+
+    const _watchRefreshToken = () => {
+        // check refresh token expired each 15 day - "*/15 * *"
+        schedule.scheduleJob("*/15 * *", async () => {
+            console.log("--- CHECK REFRESH TOKEN");
+            const users = await _getUsersRefreshToken();
+            if (!isEmpty(users)) {
+                const transaction = client.transaction();
+                users.forEach((user) => {
+                    const activeTokens = _getActiveTokens(user.refreshToken);
+                    if (activeTokens) {
+                        const update = client
+                            .patch(user._id)
+                            .setIfMissing({ refreshToken: [] });
+
+                        if (isEmpty(activeTokens)) {
+                            update.unset(["refreshToken"]);
+                        } else {
+                            update.set({ refreshToken: activeTokens });
                         }
 
                         transaction.patch(update);
@@ -140,6 +170,17 @@ export const ScheduleService = (() => {
             const data = await client.fetch<
                 Array<{ _id: string; accessToken: string[] }>
             >(GET_USERS_ACCESS_TOKEN);
+            return data;
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const _getUsersRefreshToken = async () => {
+        try {
+            const data = await client.fetch<
+                Array<{ _id: string; refreshToken: string[] }>
+            >(GET_USERS_REFRESH_TOKEN);
             return data;
         } catch (error) {
             console.log(error);
@@ -170,9 +211,9 @@ export const ScheduleService = (() => {
                 // _logJob();
             });
         },
-        watchAccessToken() {
-            console.log("--- SCHEDULE ACCESS TOKEN");
-
+        watchToken() {
+            console.log("--- SCHEDULE TOKEN");
+            _watchRefreshToken();
             _watchAccessToken();
         },
     };

@@ -25,7 +25,7 @@ app.listen(port, () => {
             ScheduleService.watchBirthDay();
         }
 
-        ScheduleService.watchAccessToken();
+        ScheduleService.watchToken();
         WebPushService.watchNotify();
     });
 
