@@ -1,4 +1,4 @@
-import { SanityDocument } from "@sanity/client";
+import { Patch, SanityDocument } from "@sanity/client";
 import speakeasy from "speakeasy";
 
 export interface Service2FA {
@@ -10,9 +10,6 @@ export interface Service2FA {
         hashedBackupCodes: string[];
     };
     verifyToken: (token: string, base32: string) => boolean;
-    saveSanity: (
-        id: string,
-        base32: string
-    ) => Promise<SanityDocument<Record<string, any>>>;
+    saveSanity: (id: string, base32: string) => Patch;
     disabledTwoFA: (id: string) => Promise<SanityDocument<Record<string, any>>>;
 }

@@ -4,7 +4,7 @@ import { CODE } from "~/constant/code";
 import { ROLE } from "~/constant/role";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
-import { createToken, getUserTwoFA } from "~/services/auth";
+import { createToken, getUserTwoFA, saveToken } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { credential } = req.body;
@@ -43,6 +43,8 @@ const signIn: RequestHandler = async (req, res) => {
 
         const accessToken = createToken(d._id, "1h");
         const refreshToken = createToken(d._id, "720h");
+
+        await saveToken(d._id, { accessToken, refreshToken });
 
         res.status(STATUS.SUCCESS).json({
             code: CODE.SUCCESS,

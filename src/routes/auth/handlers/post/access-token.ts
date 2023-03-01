@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
-import { createToken } from "~/services/auth";
+import { createToken, deleteToken, saveToken } from "~/services/auth";
 
 const accessToken: RequestHandler = async (req, res) => {
     const { refreshToken } = req.body;
@@ -12,28 +12,31 @@ const accessToken: RequestHandler = async (req, res) => {
         return;
     }
 
-    const handler: VerifyCallback<string | JwtPayload> = (err, decoded) => {
-        if (err) {
-            if (err.message === "jwt expired") {
-                res.status(STATUS.FORBIDDEN).json({
-                    code: CODE.REFRESH_TOKEN_EXPIRED,
-                });
-                return;
-            }
-            // Forbidden
-            res.status(STATUS.FORBIDDEN).json({
-                code: CODE.FORBIDDEN,
+    const handler: VerifyCallback<string | JwtPayload> = async (
+        err,
+        decoded
+    ) => {
+        const { _id } = decoded as JwtPayload;
+        if (!err) {
+            const accessToken = createToken(_id, "1h");
+            await saveToken(_id, { accessToken });
+
+            res.status(STATUS.SUCCESS).json({
+                code: CODE.SUCCESS,
+                accessToken,
             });
             return;
         }
-
-        const { _id } = decoded as JwtPayload;
-
-        const accessToken = createToken(_id, "1h");
-
-        res.status(STATUS.SUCCESS).json({
-            code: CODE.SUCCESS,
-            accessToken,
+        if (err.message === "jwt expired") {
+            await deleteToken(_id, { refreshToken });
+            res.status(STATUS.FORBIDDEN).json({
+                code: CODE.REFRESH_TOKEN_EXPIRED,
+            });
+            return;
+        }
+        // Forbidden
+        res.status(STATUS.FORBIDDEN).json({
+            code: CODE.FORBIDDEN,
         });
     };
 

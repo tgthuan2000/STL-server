@@ -54,7 +54,6 @@ export const WebPushService = ((): ServiceWebPush => {
             });
         }
         if (!isEmpty(sends)) {
-            console.log("first");
             Promise.allSettled(sends).then((results) => {
                 results.forEach((result) => {
                     if (result.status === "fulfilled") {
