@@ -87,3 +87,23 @@ export const GET_USERS_BIRTHDAY = groq`
         "sendMail": allowSendMail,
     }
 `;
+
+export const GET_USER_ACCESS_TOKEN = groq`
+    *[_type == "user" && _id == $_id][0] {
+        accessToken
+    }
+`;
+
+export const GET_USER_TOKEN_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0] {
+        accessToken,
+        refreshToken
+    }
+`;
+
+export const GET_USERS_ACCESS_TOKEN = groq`
+    *[_type == "user"] {
+        _id,
+        accessToken
+    }
+`;

@@ -1,8 +1,13 @@
 import { SanityDocument } from "@sanity/client";
+import jwtDecode from "jwt-decode";
+import { isEmpty } from "lodash";
 import schedule from "node-schedule";
 import { IUserBirthDay } from "~/@types/schedule";
 import { client } from "~/plugin/sanity";
-import { GET_USERS_BIRTHDAY } from "~/schema/query/auth";
+import {
+    GET_USERS_ACCESS_TOKEN,
+    GET_USERS_BIRTHDAY,
+} from "~/schema/query/auth";
 import { notifySchedule } from "./notify/template";
 
 export const ScheduleService = (() => {
@@ -16,7 +21,7 @@ export const ScheduleService = (() => {
 
     const _scheduleNotify = (data: IUserBirthDay[]) => {
         data.forEach((user) => {
-            _schedule(user);
+            _birthdaySchedule(user);
         });
     };
 
@@ -38,7 +43,7 @@ export const ScheduleService = (() => {
             switch (update.transition) {
                 case "appear":
                     if (user?.birthDay) {
-                        _schedule(_getScheduleData(user));
+                        _birthdaySchedule(_getScheduleData(user));
                     }
                     break;
                 case "update":
@@ -49,7 +54,7 @@ export const ScheduleService = (() => {
                             const oldBirthDay = new Date(job.nextInvocation());
                             if (newBirthDay !== oldBirthDay) {
                                 _removeJob(user._id);
-                                _schedule(_getScheduleData(user));
+                                _birthdaySchedule(_getScheduleData(user));
                             }
                         }
                     }
@@ -62,7 +67,7 @@ export const ScheduleService = (() => {
         });
     };
 
-    const _schedule = (user: IUserBirthDay) => {
+    const _birthdaySchedule = (user: IUserBirthDay) => {
         const { birthDay } = user;
         const date = new Date(birthDay);
         const rule = new schedule.RecurrenceRule();
@@ -101,8 +106,62 @@ export const ScheduleService = (() => {
         });
     };
 
+    const _watchAccessToken = () => {
+        // check access token expired each 1 hour - "*/1 * * *"
+        schedule.scheduleJob("*/1 * * *", async () => {
+            console.log("--- CHECK ACCESS TOKEN");
+            const users = await _getUsersAccessToken();
+            if (!isEmpty(users)) {
+                const transaction = client.transaction();
+                users.forEach((user) => {
+                    const activeTokens = _getActiveTokens(user.accessToken);
+                    if (activeTokens) {
+                        const update = client
+                            .patch(user._id)
+                            .setIfMissing({ activeTokens: [] });
+
+                        if (isEmpty(activeTokens)) {
+                            update.unset(["activeTokens"]);
+                        } else {
+                            update.set({ activeTokens });
+                        }
+
+                        transaction.patch(update);
+                    }
+                });
+                console.log(transaction.toJSON());
+                await transaction.commit();
+            }
+        });
+    };
+
+    const _getUsersAccessToken = async () => {
+        try {
+            const data = await client.fetch<
+                Array<{ _id: string; accessToken: string[] }>
+            >(GET_USERS_ACCESS_TOKEN);
+            return data;
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const _getActiveTokens = (tokens: string[]): string[] => {
+        if (isEmpty(tokens)) {
+            return [];
+        }
+        const activeTokens = tokens.filter((token) => {
+            const { exp } = jwtDecode<{ exp: number }>(token);
+            if (exp * 1000 < Date.now()) {
+                return false;
+            }
+            return true;
+        });
+        return activeTokens;
+    };
+
     return {
-        watchBirthDay: () => {
+        watchBirthDay() {
             console.log("--- SCHEDULE BIRTHDAY NOTIFY");
 
             _getUsers().then((users) => {
@@ -110,6 +169,11 @@ export const ScheduleService = (() => {
                 _watchNewUsers();
                 // _logJob();
             });
+        },
+        watchAccessToken() {
+            console.log("--- SCHEDULE ACCESS TOKEN");
+
+            _watchAccessToken();
         },
     };
 })();

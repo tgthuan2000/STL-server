@@ -7,6 +7,7 @@ import {
     createToken,
     getBase32ById,
     getUserIdBase32ById,
+    saveToken,
 } from "~/services/auth";
 
 const _2FA: RequestHandler = async (req, res) => {
@@ -49,6 +50,8 @@ const _2FA: RequestHandler = async (req, res) => {
     if (verified) {
         const accessToken = createToken(id, "1h");
         const refreshToken = createToken(id, "720h");
+
+        await saveToken(id, { accessToken, refreshToken });
 
         res.status(STATUS.SUCCESS).json({
             code: CODE.SUCCESS,
