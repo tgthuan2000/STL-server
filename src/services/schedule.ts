@@ -108,9 +108,9 @@ export const ScheduleService = (() => {
     };
 
     const _watchAccessToken = () => {
-        // check access token expired each 1 day - "*/1 * *"
-        schedule.scheduleJob("*/1 * *", async () => {
-            console.log("--- CHECK ACCESS TOKEN");
+        // check access token expired each 1 day - "0 0 * * *"
+        schedule.scheduleJob("0 0 * * *", async () => {
+            console.log("--- CHECK ACCESS TOKEN", new Date());
             const users = await _getUsersAccessToken();
             if (!isEmpty(users)) {
                 const transaction = client.transaction();
@@ -137,9 +137,9 @@ export const ScheduleService = (() => {
     };
 
     const _watchRefreshToken = () => {
-        // check refresh token expired each 15 day - "*/15 * *"
-        schedule.scheduleJob("*/15 * *", async () => {
-            console.log("--- CHECK REFRESH TOKEN");
+        // check refresh token expired each 15 day - "0 0 15 * 1"
+        schedule.scheduleJob("0 0 15 * 1", async () => {
+            console.log("--- CHECK REFRESH TOKEN", new Date());
             const users = await _getUsersRefreshToken();
             if (!isEmpty(users)) {
                 const transaction = client.transaction();
