@@ -1,6 +1,6 @@
 import { SanityDocument } from "@sanity/client";
 import jwtDecode from "jwt-decode";
-import { isEmpty } from "lodash";
+import { isEmpty, isEqual } from "lodash";
 import schedule from "node-schedule";
 import { IUserBirthDay } from "~/@types/schedule";
 import { client } from "~/plugin/sanity";
@@ -108,8 +108,8 @@ export const ScheduleService = (() => {
     };
 
     const _watchAccessToken = () => {
-        // check access token expired each 1 hour - "*/1 * * *"
-        schedule.scheduleJob("*/1 * * *", async () => {
+        // check access token expired each 1 day - "*/1 * *"
+        schedule.scheduleJob("*/1 * *", async () => {
             console.log("--- CHECK ACCESS TOKEN");
             const users = await _getUsersAccessToken();
             if (!isEmpty(users)) {
