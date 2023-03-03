@@ -104,10 +104,11 @@ export const verifyToken: RequestHandler = (req, res, next) => {
 
         if (err.message === "jwt expired") {
             // delete token in db
-            const id = get(decoded, "_id");
-            console.log("jwt expired with id: ", id);
-            if (id) {
-                await deleteToken(id, { accessToken: bearerToken });
+            if (decoded) {
+                const id = get(decoded, "_id");
+                if (id) {
+                    await deleteToken(id, { accessToken: bearerToken });
+                }
             }
 
             res.status(STATUS.FORBIDDEN).json({
