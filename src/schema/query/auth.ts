@@ -102,6 +102,12 @@ export const GET_USER_ACCESS_TOKEN = groq`
     }
 `;
 
+export const GET_USER_REFRESH_TOKEN = groq`
+    *[_type == "user" && _id == $_id][0] {
+        refreshToken
+    }
+`;
+
 export const GET_USER_TOKEN_BY_ID = groq`
     *[_type == "user" && _id == $_id][0] {
         accessToken,
