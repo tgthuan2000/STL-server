@@ -16,8 +16,10 @@ import {
     GET_USER_BASE32_2FA_BY_ID,
     GET_USER_EMAIL_BY_ID,
     GET_USER_ID_BASE32_BY_ID,
+    GET_USER_REFRESH_TOKEN,
     GET_USER_TOKEN_BY_ID,
 } from "~/schema/query/auth";
+import { msg } from ".";
 
 dotenv.config();
 
@@ -76,7 +78,7 @@ export const verifyToken: RequestHandler = (req, res, next) => {
 
     if (!bearerHeader) {
         // Forbidden
-        res.send(STATUS.FORBIDDEN).json({ code: CODE.FORBIDDEN });
+        res.send(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
         return;
     }
 
@@ -84,7 +86,7 @@ export const verifyToken: RequestHandler = (req, res, next) => {
     const bearerToken = bearers[1];
 
     if (!bearerToken) {
-        res.send(STATUS.FORBIDDEN).json({ code: CODE.FORBIDDEN });
+        res.send(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
         return;
     }
     // verifies secret and checks exp
@@ -112,37 +114,41 @@ export const verifyToken: RequestHandler = (req, res, next) => {
                 }
             }
 
-            res.status(STATUS.FORBIDDEN).json({
-                code: CODE.ACCESS_TOKEN_EXPIRED,
-            });
+            res.status(STATUS.FORBIDDEN).json(msg(CODE.ACCESS_TOKEN_EXPIRED));
             return;
         }
         // Forbidden
-        res.status(STATUS.FORBIDDEN).json({
-            code: CODE.FORBIDDEN,
-        });
+        res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
     };
 
     jwt.verify(bearerToken, process.env.ACCESS_TOKEN_SECRET, handler);
 };
 
-export const verifyRevokeToken: RequestHandler = async (req, res, next) => {
+export const verifyAccessToken: RequestHandler = async (req, res, next) => {
     const _id = getUserId(req);
     const token = getUserToken(req);
 
     if (!token || !_id) {
-        res.status(STATUS.FORBIDDEN).json({ code: CODE.FORBIDDEN });
+        res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
         return;
     }
 
     const data = await client.fetch(GET_USER_ACCESS_TOKEN, { _id });
 
-    if (isEmpty(data.accessToken)) {
-        res.status(STATUS.FORBIDDEN).json({ code: CODE.TOKEN_REVOKED });
+    const accessTokenIndex = getTokenIndex(data.accessToken, token);
+
+    if (accessTokenIndex === -1) {
+        res.status(STATUS.FORBIDDEN).json(msg(CODE.ACCESS_TOKEN_EXPIRED));
         return;
     }
 
     next();
+};
+
+export const verifyRefreshToken = async (_id: string, token: string) => {
+    const data = await client.fetch(GET_USER_REFRESH_TOKEN, { _id });
+    const refreshTokenIndex = getTokenIndex(data.refreshToken, token);
+    return refreshTokenIndex !== -1;
 };
 
 export const deleteToken = async (
@@ -208,11 +214,11 @@ export const revokeToken = (_id: string) => {
     }
 };
 
-export const getTokenIndex = (data: any, token: string) => {
+export const getTokenIndex = (data: undefined | string[], token: string) => {
     if (!token) {
         return -1;
     }
-    const index = data.findIndex((t: string) => t === token);
+    const index = data?.findIndex((t: string) => t === token) ?? -1;
     return index;
 };
 

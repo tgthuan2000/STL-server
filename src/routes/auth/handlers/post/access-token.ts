@@ -3,7 +3,12 @@ import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { msg } from "~/services";
-import { createToken, deleteToken, saveToken } from "~/services/auth";
+import {
+    createToken,
+    deleteToken,
+    saveToken,
+    verifyRefreshToken,
+} from "~/services/auth";
 
 const accessToken: RequestHandler = async (req, res) => {
     const { refreshToken } = req.body;
@@ -19,6 +24,15 @@ const accessToken: RequestHandler = async (req, res) => {
     ) => {
         const { _id } = decoded as JwtPayload;
         if (!err) {
+            // check token in db
+
+            const isVerified = await verifyRefreshToken(_id, refreshToken);
+
+            if (!isVerified) {
+                res.status(STATUS.FORBIDDEN).json(msg(CODE.TOKEN_REVOKED));
+                return;
+            }
+
             const accessToken = createToken(_id, "1h");
             await saveToken(_id, { accessToken });
 
