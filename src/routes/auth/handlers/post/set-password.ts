@@ -3,6 +3,7 @@ import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { msg } from "~/services";
 import { getUserId } from "~/services/auth";
 
 const setPassword: RequestHandler = async (req, res) => {
@@ -10,7 +11,7 @@ const setPassword: RequestHandler = async (req, res) => {
     const _id = getUserId(req);
 
     if (!password) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_PASSWORD });
+        res.status(STATUS.SUCCESS).json(msg(CODE.REQUIRED_PASSWORD));
         return;
     }
 
@@ -20,7 +21,7 @@ const setPassword: RequestHandler = async (req, res) => {
 
     await transaction.commit();
 
-    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
+    res.status(STATUS.SUCCESS).json(msg(CODE.SUCCESS));
 };
 
 export default setPassword;

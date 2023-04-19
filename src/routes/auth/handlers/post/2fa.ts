@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import jwtDecode from "jwt-decode";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
 import {
     createToken,
@@ -40,7 +41,7 @@ const _2FA: RequestHandler = async (req, res) => {
     }
 
     if (!base32) {
-        res.status(STATUS.BAD_REQUEST).json({ code: CODE.INVALID_DATA });
+        res.status(STATUS.BAD_REQUEST).json(msg(CODE.INVALID_DATA));
         return;
     }
 
@@ -53,15 +54,13 @@ const _2FA: RequestHandler = async (req, res) => {
 
         await saveToken(id, { accessToken, refreshToken });
 
-        res.status(STATUS.SUCCESS).json({
-            code: CODE.SUCCESS,
-            accessToken,
-            refreshToken,
-        });
+        res.status(STATUS.SUCCESS).json(
+            msg(CODE.SUCCESS, { accessToken, refreshToken })
+        );
 
         return;
     }
 
-    res.status(STATUS.SUCCESS).json({ code: CODE.TWO_FA_INVALID, verified });
+    res.status(STATUS.SUCCESS).json(msg(CODE.TWO_FA_INVALID, { verified }));
 };
 export default _2FA;

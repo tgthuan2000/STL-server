@@ -4,13 +4,14 @@ import { CODE } from "~/constant/code";
 import { ROLE } from "~/constant/role";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { msg } from "~/services";
 import { createToken, getUserTwoFA, saveToken } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { credential } = req.body;
 
     if (!credential) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_CREDENTIAL });
+        res.status(STATUS.SUCCESS).json(msg(CODE.REQUIRED_CREDENTIAL));
         return;
     }
 
@@ -30,14 +31,22 @@ const signIn: RequestHandler = async (req, res) => {
                 _type: "reference",
                 _ref: ROLE.CLIENT,
             },
+            active: true,
         };
 
         const d = await client.createIfNotExists(document);
+
+        // check active
+        if (!d.active) {
+            res.status(STATUS.SUCCESS).json(msg(CODE.INACTIVE_ACCOUNT));
+            return;
+        }
+
         const twoFA = await getUserTwoFA(d._id);
 
         // check 2fa
         if (twoFA) {
-            res.status(STATUS.SUCCESS).json({ code: CODE.CHECK_2FA });
+            res.status(STATUS.SUCCESS).json(msg(CODE.CHECK_2FA));
             return;
         }
 
@@ -46,11 +55,9 @@ const signIn: RequestHandler = async (req, res) => {
 
         await saveToken(d._id, { accessToken, refreshToken });
 
-        res.status(STATUS.SUCCESS).json({
-            code: CODE.SUCCESS,
-            accessToken,
-            refreshToken,
-        });
+        res.status(STATUS.SUCCESS).json(
+            msg(CODE.SUCCESS, { accessToken, refreshToken })
+        );
     }
 };
 export default signIn;

@@ -3,6 +3,7 @@ import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { msg } from "~/services";
 import { comparePassword, getUserId } from "~/services/auth";
 
 const changePassword: RequestHandler = async (req, res) => {
@@ -10,14 +11,14 @@ const changePassword: RequestHandler = async (req, res) => {
     const _id = getUserId(req);
 
     if (!newPassword || !oldPassword) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.REQUIRED_PASSWORD });
+        res.status(STATUS.SUCCESS).json(msg(CODE.REQUIRED_PASSWORD));
         return;
     }
 
     const isMatch = await comparePassword(_id, oldPassword);
 
     if (!isMatch) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.INVALID_OLD_PASSWORD });
+        res.status(STATUS.SUCCESS).json(msg(CODE.INVALID_OLD_PASSWORD));
         return;
     }
 
@@ -27,7 +28,7 @@ const changePassword: RequestHandler = async (req, res) => {
 
     await transaction.commit();
 
-    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
+    res.status(STATUS.SUCCESS).json(msg(CODE.SUCCESS));
 };
 
 export default changePassword;

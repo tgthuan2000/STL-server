@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
 import { getBase32ById, getUserId } from "~/services/auth";
 
@@ -10,7 +11,7 @@ const disabled2FA: RequestHandler = async (req, res) => {
     const _id = getUserId(req);
 
     if (!code) {
-        res.status(STATUS.BAD_REQUEST).json({ code: CODE.REQUIRED_DATA });
+        res.status(STATUS.BAD_REQUEST).json(msg(CODE.REQUIRED_DATA));
         return;
     }
 
@@ -25,7 +26,7 @@ const disabled2FA: RequestHandler = async (req, res) => {
     }
 
     if (!base32) {
-        res.status(STATUS.BAD_REQUEST).json({ code: CODE.INVALID_DATA });
+        res.status(STATUS.BAD_REQUEST).json(msg(CODE.INVALID_DATA));
         return;
     }
 
@@ -33,11 +34,11 @@ const disabled2FA: RequestHandler = async (req, res) => {
     const verified = TwoFA.verifyToken(code, base32);
 
     if (!verified) {
-        res.status(STATUS.SUCCESS).json({ code: CODE.TWO_FA_INVALID });
+        res.status(STATUS.SUCCESS).json(msg(CODE.TWO_FA_INVALID));
         return;
     }
 
     await client.patch(_id).set({ twoFA: false }).unset(["base32"]).commit();
-    res.status(STATUS.SUCCESS).json({ code: CODE.SUCCESS });
+    res.status(STATUS.SUCCESS).json(msg(CODE.SUCCESS));
 };
 export default disabled2FA;
