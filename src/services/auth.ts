@@ -7,6 +7,7 @@ import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
 import {
+    GET_ACTIVE_USER_2FA_BY_ID,
     GET_BASE32_BY_EMAIL,
     GET_BASE32_BY_ID,
     GET_PASSWORD_BY_ID,
@@ -237,6 +238,14 @@ export const getUserBase32TwoFA = async (_id: string) => {
 
 export const getUserTwoFA = async (_id: string) => {
     const data = await client.fetch<string>(GET_USER_2FA_BY_ID, { _id });
+    return data;
+};
+
+export const getActiveUserTwoFA = async (_id: string) => {
+    const data = await client.fetch<{ twoFA: string; active: boolean }>(
+        GET_ACTIVE_USER_2FA_BY_ID,
+        { _id }
+    );
     return data;
 };
 

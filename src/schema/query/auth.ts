@@ -33,7 +33,8 @@ export const GET_USER_BY_ID = groq`
         google,
         "isHasPassword": defined(password),
         allowSendMail,
-        twoFA
+        twoFA,
+        active
     }
 `;
 
@@ -47,6 +48,13 @@ export const GET_USER_BASE32_2FA_BY_ID = groq`
 
 export const GET_USER_2FA_BY_ID = groq`
     *[_type == "user" && _id == $_id][0].twoFA
+`;
+
+export const GET_ACTIVE_USER_2FA_BY_ID = groq`
+    *[_type == "user" && _id == $_id][0]{
+        twoFA,
+        active
+    }
 `;
 
 export const GET_BASE32_BY_EMAIL = groq`
