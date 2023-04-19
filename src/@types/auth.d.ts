@@ -11,6 +11,7 @@ export interface IUserProfile {
     birthDay?: Date;
     twoFA: boolean;
     base32: string;
+    active: boolean;
 }
 
 export interface AccessToken {
