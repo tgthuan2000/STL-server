@@ -5,12 +5,14 @@ import { STATUS } from "~/constant/status";
 import { msg } from "~/services";
 import {
     createAccessRefreshToken,
+    getUserAgent,
     getUserTwoFA,
     signInGoogle,
 } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { credential } = req.body;
+    const userAgent = getUserAgent(req);
 
     if (!credential) {
         res.status(STATUS.SUCCESS).json(msg(CODE.REQUIRED_CREDENTIAL));
@@ -38,7 +40,7 @@ const signIn: RequestHandler = async (req, res) => {
 
         const { accessToken, refreshToken } = await createAccessRefreshToken(
             d._id,
-            { device: "" }
+            { device: userAgent }
         );
 
         res.status(STATUS.SUCCESS).json(

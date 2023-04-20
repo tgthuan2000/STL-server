@@ -4,15 +4,16 @@ import dotenv from "dotenv";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import { get } from "lodash";
+import { IRefreshToken } from "~/@types/auth";
 import { ROLE } from "~/constant/role";
 import { client } from "~/plugin/sanity";
 import {
     GET_ACCESS_TOKEN_BY_REFRESH_TOKEN,
     GET_ACTIVE_USER_2FA_BY_ID,
+    GET_ALL_REFRESH_TOKEN_BY_USER_ID,
     GET_BASE32_BY_EMAIL,
     GET_PASSWORD_BY_ID,
-    GET_TOKEN_BY_JWT,
-    GET_TOKEN_BY_USER_ID,
+    GET_REFRESH_TOKEN_BY_JWT,
     GET_USER_2FA_BY_ID,
     GET_USER_ACCESS_TOKEN,
     GET_USER_BASE32_2FA_BY_ID,
@@ -46,12 +47,15 @@ export const saveToken = async (
         const transaction = client.transaction();
         const refreshTokenId = uuid();
         const accessTokenId = uuid();
+        const accessTokenExpired = getExpiredDate(ACCESS_TOKEN_EXPIRED_HOURS);
+        const refreshTokenExpired = getExpiredDate(REFRESH_TOKEN_EXPIRED_HOURS);
 
         // create access token
         const accessToken = {
             _type: "accessToken",
             _id: accessTokenId,
             token: token.accessToken,
+            expiredAt: accessTokenExpired,
             refreshToken: {
                 _ref: refreshTokenId,
                 _type: "reference",
@@ -65,6 +69,7 @@ export const saveToken = async (
             _id: refreshTokenId,
             token: token.refreshToken.token,
             device: token.refreshToken.device,
+            expiredAt: refreshTokenExpired,
             lastAccess: new Date(),
             user: {
                 _ref: _id,
@@ -90,6 +95,7 @@ export const saveNewAccessToken = async (
         }
 
         const transaction = client.transaction();
+        const expiredAt = getExpiredDate(ACCESS_TOKEN_EXPIRED_HOURS);
         const id = uuid();
 
         // create access token
@@ -97,6 +103,7 @@ export const saveNewAccessToken = async (
             _type: "accessToken",
             _id: id,
             token: token.accessToken,
+            expiredAt,
             refreshToken: {
                 _ref: token.refreshToken,
                 _type: "reference",
@@ -117,8 +124,26 @@ export const saveNewAccessToken = async (
     }
 };
 
-const ACCESS_TOKEN_EXPIRED_TIME = "1h";
-const REFRESH_TOKEN_EXPIRED_TIME = "720h";
+const getExpiredTimeEnv = (env: string, defaultValue: number = 1) => {
+    return env ? Number(env) : defaultValue;
+};
+
+const ACCESS_TOKEN_EXPIRED_HOURS = getExpiredTimeEnv(
+    process.env.ACCESS_TOKEN_EXPIRED_HOURS,
+    1
+);
+
+const REFRESH_TOKEN_EXPIRED_HOURS = getExpiredTimeEnv(
+    process.env.REFRESH_TOKEN_EXPIRED_HOURS,
+    720
+);
+
+const getExpiredDate = (hours: number) => {
+    const date = new Date();
+    date.setHours(date.getHours() + hours);
+    return date;
+};
+
 const createToken = (_id: string, expiresIn: string | number = "1h") => {
     const token = jwt.sign({ _id }, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn,
@@ -130,8 +155,8 @@ export const createAccessRefreshToken = async (
     _id: string,
     options: { device: string }
 ) => {
-    const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_TIME);
-    const refreshToken = createToken(_id, REFRESH_TOKEN_EXPIRED_TIME);
+    const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_HOURS + "h");
+    const refreshToken = createToken(_id, REFRESH_TOKEN_EXPIRED_HOURS + "h");
 
     await saveToken(_id, {
         accessToken,
@@ -145,7 +170,7 @@ export const createNewAccessToken = async (
     _id: string,
     refreshTokenId: string
 ) => {
-    const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_TIME);
+    const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_HOURS + "h");
     await saveNewAccessToken(_id, {
         accessToken,
         refreshToken: refreshTokenId,
@@ -169,33 +194,29 @@ export const getAccessByRefreshToken = async (refreshToken: string) => {
     return data;
 };
 
-export const getTokenByUserId = async (userId: string) => {
-    const data = await client.fetch<
-        Array<{ _id: string; accessTokens: Array<{ _id: string }> }>
-    >(GET_TOKEN_BY_USER_ID, {
-        userId: userId,
-    });
+export const getAllRefreshTokenByUserId = async (userId: string) => {
+    const data = await client.fetch<Array<IRefreshToken>>(
+        GET_ALL_REFRESH_TOKEN_BY_USER_ID,
+        { userId: userId }
+    );
     return data;
 };
 
-export const getTokenByJwt = async (refreshTokenJwt: string) => {
-    const data = await client.fetch<{
-        _id: string;
-        accessTokens: Array<{ _id: string }>;
-    }>(GET_TOKEN_BY_JWT, {
+export const getRefreshTokenByJwt = async (refreshTokenJwt: string) => {
+    const data = await client.fetch<IRefreshToken>(GET_REFRESH_TOKEN_BY_JWT, {
         jwt: refreshTokenJwt,
     });
     return data;
 };
 
-export const _revokeTokenAll = async (userId: string) => {
+export const revokeTokenAll = async (userId: string) => {
     try {
         if (!userId) {
             return;
         }
 
         const transaction = client.transaction();
-        const refreshTokens = await getTokenByUserId(userId);
+        const refreshTokens = await getAllRefreshTokenByUserId(userId);
 
         refreshTokens.forEach((refreshToken) => {
             transaction.delete(refreshToken._id);
@@ -239,7 +260,7 @@ export const revokeTokenJwt = async (refreshTokenJwt: string) => {
         }
 
         const transaction = client.transaction();
-        const refreshToken = await getTokenByJwt(refreshTokenJwt);
+        const refreshToken = await getRefreshTokenByJwt(refreshTokenJwt);
 
         transaction.delete(refreshToken._id);
         refreshToken.accessTokens?.forEach((token) => {
@@ -269,6 +290,10 @@ export const getUserToken = (req: Request) => {
 export const getUserId = (req: Request) => {
     // @ts-ignore
     return get(req, "accessToken._id", null);
+};
+
+export const getUserAgent = (req: Request) => {
+    return req.headers["user-agent"] ?? "";
 };
 
 export const getUserEmail = async (_id: string) => {

@@ -7,11 +7,13 @@ import { TwoFA } from "~/services/2fa";
 import {
     createAccessRefreshToken,
     getBase32ById,
+    getUserAgent,
     getUserIdBase32ById,
 } from "~/services/auth";
 
 const _2FA: RequestHandler = async (req, res) => {
     const { _id, code, credential } = req.body;
+    const userAgent = getUserAgent(req);
     let base32: string | null = null;
     let id: string | null = null;
     let infoUser: { _id: string; base32: string | null } | undefined =
@@ -50,7 +52,7 @@ const _2FA: RequestHandler = async (req, res) => {
     if (verified) {
         const { accessToken, refreshToken } = await createAccessRefreshToken(
             id,
-            { device: "" }
+            { device: userAgent }
         );
 
         res.status(STATUS.SUCCESS).json(

@@ -19,3 +19,8 @@ export interface AccessToken {
     exp: number;
     iat: number;
 }
+
+export interface IRefreshToken {
+    _id: string;
+    accessTokens: Array<{ _id: string }>;
+}
