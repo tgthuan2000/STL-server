@@ -6,10 +6,12 @@ import {
     comparePassword,
     createAccessRefreshToken,
     getActiveUserTwoFA,
+    getUserAgent,
 } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { _id, password } = req.body;
+    const userAgent = getUserAgent(req);
 
     if (!_id) {
         res.status(STATUS.SUCCESS).json(msg(CODE.REQUIRED_ID));
@@ -41,7 +43,7 @@ const signIn: RequestHandler = async (req, res) => {
     }
 
     const { accessToken, refreshToken } = await createAccessRefreshToken(_id, {
-        device: "",
+        device: userAgent,
     });
 
     res.status(STATUS.SUCCESS).json(

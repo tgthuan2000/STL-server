@@ -1,16 +1,16 @@
-import { SanityDocument, Transaction } from "@sanity/client";
+import { SanityDocument } from "@sanity/client";
 import jwtDecode from "jwt-decode";
 import { isEmpty } from "lodash";
 import schedule from "node-schedule";
 import { IUserBirthDay } from "~/@types/schedule";
 import { client } from "~/plugin/sanity";
 import {
-    GET_ACCESS_TOKEN,
-    GET_REFRESH_TOKEN,
+    GET_ACCESS_TOKEN_EXPIRED,
+    GET_REFRESH_TOKEN_EXPIRED,
     GET_USERS_BIRTHDAY,
 } from "~/schema/query/auth";
-import { getAccessByRefreshToken } from "./auth";
 import { notifySchedule } from "./notify/template";
+import { IRefreshToken } from "~/@types/auth";
 
 export const ScheduleService = (() => {
     console.log("services/schedule");
@@ -108,39 +108,20 @@ export const ScheduleService = (() => {
         });
     };
 
-    const __handler = async (
-        getTokens: () => Promise<Array<{ _id: string }>>,
-        callback: (
-            token: string,
-            transaction: Transaction
-        ) => void | Promise<void>,
-        transaction?: Transaction
-    ) => {
-        const tokens = await getTokens();
-        const _transaction = transaction ?? client.transaction();
-
-        if (!isEmpty(tokens)) {
-            for (const token of tokens) {
-                await callback(token._id, _transaction);
-            }
-        }
-        return _transaction;
-    };
-
     const _watchAccessToken = () => {
         // check access token expired each 1 day - "0 0 * * *"
         schedule.scheduleJob("0 0 * * *", async () => {
             console.log("--- CHECK ACCESS TOKEN", new Date());
-            const transaction = await __handler(
-                _getAccessToken,
-                (token, transaction) => {
-                    const isActive = _checkTokenIsActive(token);
-                    if (!isActive) {
-                        transaction.delete(token);
-                    }
+
+            const accessTokens = await _getAccessTokenExpired();
+
+            if (!isEmpty(accessTokens)) {
+                const transaction = client.transaction();
+                for (const token of accessTokens) {
+                    transaction.delete(token._id);
                 }
-            );
-            await transaction.commit();
+                await transaction.commit();
+            }
         });
     };
 
@@ -148,42 +129,26 @@ export const ScheduleService = (() => {
         // check refresh token expired each 15 day - "0 0 15 * 1"
         schedule.scheduleJob("0 0 15 * 1", async () => {
             console.log("--- CHECK REFRESH TOKEN", new Date());
-            const expiredRefreshTokens: string[] = [];
-            const transaction = client.transaction();
-            await __handler(
-                _getRefreshToken,
-                (token, transaction) => {
-                    const isActive = _checkTokenIsActive(token);
-                    if (!isActive) {
-                        expiredRefreshTokens.push(token);
-                        transaction.delete(token);
+
+            const refreshTokens = await _getRefreshTokenExpired();
+
+            if (!isEmpty(refreshTokens)) {
+                const transaction = client.transaction();
+                for (const token of refreshTokens) {
+                    transaction.delete(token._id);
+                    for (const accessToken of token.accessTokens) {
+                        transaction.delete(accessToken._id);
                     }
-                },
-                transaction
-            );
-
-            if (isEmpty(expiredRefreshTokens)) {
+                }
                 await transaction.commit();
-                return;
             }
-
-            for (const token of expiredRefreshTokens) {
-                await __handler(
-                    () => getAccessByRefreshToken(token),
-                    (token, transaction) => {
-                        transaction.delete(token);
-                    },
-                    transaction
-                );
-            }
-            await transaction.commit();
         });
     };
 
-    const _getAccessToken = async () => {
+    const _getAccessTokenExpired = async () => {
         try {
             const data = await client.fetch<Array<{ _id: string }>>(
-                GET_ACCESS_TOKEN
+                GET_ACCESS_TOKEN_EXPIRED
             );
             return data;
         } catch (error) {
@@ -191,11 +156,11 @@ export const ScheduleService = (() => {
         }
     };
 
-    const _getRefreshToken = async () => {
+    const _getRefreshTokenExpired = async () => {
         try {
-            const data = await client.fetch<
-                Array<{ _id: string; token: string }>
-            >(GET_REFRESH_TOKEN);
+            const data = await client.fetch<Array<IRefreshToken>>(
+                GET_REFRESH_TOKEN_EXPIRED
+            );
             return data;
         } catch (error) {
             console.log(error);

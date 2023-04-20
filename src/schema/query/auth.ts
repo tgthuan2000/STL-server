@@ -92,54 +92,54 @@ export const GET_USERS_BIRTHDAY = groq`
     }
 `;
 
+const EXPIRED_TIME = "dateTime(expiredAt) >= dateTime(now())";
+const NON_EXPIRED_TIME = "dateTime(expiredAt) < dateTime(now())";
+const ACCESS_TOKEN_IDS = `"accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] { _id }`;
+
 export const GET_USER_ACCESS_TOKEN = groq`
-    *[_type == "accessToken" && token == $token][0]._id
+    *[_type == "accessToken" && token == $token && ${NON_EXPIRED_TIME}][0]._id
 `;
 
 export const GET_USER_REFRESH_TOKEN = groq`
     *[_type == "refreshToken" && user._ref == $_id && token == $token][0]._id
 `;
 
-export const GET_USER_TOKEN_BY_ID = groq`
-    *[_type == "user" && _id == $_id][0] {
-        accessToken,
-        refreshToken
-    }
-`;
-
 export const GET_ACCESS_TOKEN_BY_REFRESH_TOKEN = groq`
-    *[_type == "accessToken" && refreshToken._ref == $token] {
+    *[_type == "accessToken" && refreshToken._ref == $token && ${NON_EXPIRED_TIME}] {
         _id,
     }
 `;
 
-export const GET_TOKEN_BY_JWT = groq`
+export const GET_REFRESH_TOKEN_BY_JWT = groq`
     *[_type == "refreshToken" && token == $jwt][0] {
         _id,
-        "accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] {
-            _id,
-        }
+        ${ACCESS_TOKEN_IDS}
     }
 `;
 
-export const GET_ACCESS_TOKEN = groq`
-    *[_type == "accessToken"] {
+export const GET_ACCESS_TOKEN_EXPIRED = groq`
+    *[_type == "accessToken" && ${EXPIRED_TIME}] {
         _id,
     }
 `;
 
 export const GET_REFRESH_TOKEN = groq`
-    *[_type == "refreshToken"] {
+    *[_type == "refreshToken" && ${NON_EXPIRED_TIME}] {
         _id,
-        token
+        ${ACCESS_TOKEN_IDS}
     }
 `;
 
-export const GET_TOKEN_BY_USER_ID = groq`
+export const GET_REFRESH_TOKEN_EXPIRED = groq`
+    *[_type == "refreshToken" && ${EXPIRED_TIME}] {
+        _id,
+        ${ACCESS_TOKEN_IDS}
+    }
+`;
+
+export const GET_ALL_REFRESH_TOKEN_BY_USER_ID = groq`
     *[_type == "refreshToken" && user._ref == $userId] {
         _id,
-        "accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] {
-            _id,
-        }
+        ${ACCESS_TOKEN_IDS}
     }
 `;
