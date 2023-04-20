@@ -11,6 +11,7 @@ import {
     GET_ACTIVE_USER_2FA_BY_ID,
     GET_BASE32_BY_EMAIL,
     GET_PASSWORD_BY_ID,
+    GET_REFRESH_TOKEN_ID_BY_JWT,
     GET_USER_2FA_BY_ID,
     GET_USER_ACCESS_TOKEN,
     GET_USER_BASE32_2FA_BY_ID,
@@ -158,7 +159,14 @@ export const getAccessByRefreshToken = async (refreshToken: string) => {
     return data;
 };
 
-export const deleteToken = async (refreshToken: string) => {
+export const getRefreshTokenIdByJwt = async (refreshTokenJwt: string) => {
+    const data = await client.fetch<string>(GET_REFRESH_TOKEN_ID_BY_JWT, {
+        jwt: refreshTokenJwt,
+    });
+    return data;
+};
+
+export const revokeToken = async (refreshToken: string) => {
     try {
         if (!refreshToken) {
             return;
@@ -181,12 +189,26 @@ export const deleteToken = async (refreshToken: string) => {
     }
 };
 
-export const revokeToken = (_id: string) => {
+export const revokeTokenJwt = async (refreshTokenJwt: string) => {
     try {
-        return client
-            .patch(_id)
-            .setIfMissing({ accessToken: [], refreshToken: [] })
-            .unset(["accessToken", "refreshToken"]);
+        if (!refreshTokenJwt) {
+            return;
+        }
+
+        const transaction = client.transaction();
+
+        const refreshToken = await getRefreshTokenIdByJwt(refreshTokenJwt);
+
+        transaction.delete(refreshToken);
+
+        const accessTokens = await getAccessByRefreshToken(refreshToken);
+
+        accessTokens?.forEach((token) => {
+            transaction.delete(token._id);
+        });
+
+        const response = await transaction.commit();
+        return response;
     } catch (error) {
         console.log(error);
     }

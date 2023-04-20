@@ -5,7 +5,7 @@ import { STATUS } from "~/constant/status";
 import { msg } from "~/services";
 import {
     createNewAccessToken,
-    deleteToken,
+    revokeToken,
     verifyRefreshToken,
 } from "~/services/auth";
 
@@ -39,7 +39,7 @@ const accessToken: RequestHandler = async (req, res) => {
             return;
         }
         if (err.message === "jwt expired") {
-            await deleteToken(refreshToken);
+            await revokeToken(refreshToken);
             res.status(STATUS.FORBIDDEN).json(msg(CODE.REFRESH_TOKEN_EXPIRED));
             return;
         }

@@ -113,6 +113,10 @@ export const GET_ACCESS_TOKEN_BY_REFRESH_TOKEN = groq`
     }
 `;
 
+export const GET_REFRESH_TOKEN_ID_BY_JWT = groq`
+    *[_type == "refreshToken" && token == $jwt][0]._id
+`;
+
 export const GET_ACCESS_TOKEN = groq`
     *[_type == "accessToken"] {
         _id,
