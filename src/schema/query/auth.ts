@@ -92,8 +92,8 @@ export const GET_USERS_BIRTHDAY = groq`
     }
 `;
 
-const EXPIRED_TIME = "dateTime(expiredAt) >= dateTime(now())";
-const NON_EXPIRED_TIME = "dateTime(expiredAt) < dateTime(now())";
+const EXPIRED_TIME = "dateTime(now()) > dateTime(expiredAt)";
+const NON_EXPIRED_TIME = "dateTime(now()) <= dateTime(expiredAt)";
 const ACCESS_TOKEN_IDS = `"accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] { _id }`;
 
 export const GET_USER_ACCESS_TOKEN = groq`
