@@ -1,14 +1,15 @@
-import { SanityDocument } from "@sanity/client";
+import { SanityDocument, Transaction } from "@sanity/client";
 import jwtDecode from "jwt-decode";
-import { isEmpty, isEqual } from "lodash";
+import { isEmpty } from "lodash";
 import schedule from "node-schedule";
 import { IUserBirthDay } from "~/@types/schedule";
 import { client } from "~/plugin/sanity";
 import {
-    GET_USERS_ACCESS_TOKEN,
+    GET_ACCESS_TOKEN,
+    GET_REFRESH_TOKEN,
     GET_USERS_BIRTHDAY,
-    GET_USERS_REFRESH_TOKEN,
 } from "~/schema/query/auth";
+import { getAccessByRefreshToken } from "./auth";
 import { notifySchedule } from "./notify/template";
 
 export const ScheduleService = (() => {
@@ -107,32 +108,39 @@ export const ScheduleService = (() => {
         });
     };
 
+    const __handler = async (
+        getTokens: () => Promise<Array<{ _id: string }>>,
+        callback: (
+            token: string,
+            transaction: Transaction
+        ) => void | Promise<void>,
+        transaction?: Transaction
+    ) => {
+        const tokens = await getTokens();
+        const _transaction = transaction ?? client.transaction();
+
+        if (!isEmpty(tokens)) {
+            for (const token of tokens) {
+                await callback(token._id, _transaction);
+            }
+        }
+        return _transaction;
+    };
+
     const _watchAccessToken = () => {
         // check access token expired each 1 day - "0 0 * * *"
         schedule.scheduleJob("0 0 * * *", async () => {
             console.log("--- CHECK ACCESS TOKEN", new Date());
-            const users = await _getUsersAccessToken();
-            if (!isEmpty(users)) {
-                const transaction = client.transaction();
-                users.forEach((user) => {
-                    const activeTokens = _getActiveTokens(user.accessToken);
-                    if (activeTokens) {
-                        const update = client
-                            .patch(user._id)
-                            .setIfMissing({ accessToken: [] });
-
-                        if (isEmpty(activeTokens)) {
-                            update.unset(["accessToken"]);
-                        } else {
-                            update.set({ accessToken: activeTokens });
-                        }
-
-                        transaction.patch(update);
+            const transaction = await __handler(
+                _getAccessToken,
+                (token, transaction) => {
+                    const isActive = _checkTokenIsActive(token);
+                    if (!isActive) {
+                        transaction.delete(token);
                     }
-                });
-                console.log(transaction.toJSON());
-                await transaction.commit();
-            }
+                }
+            );
+            await transaction.commit();
         });
     };
 
@@ -140,65 +148,63 @@ export const ScheduleService = (() => {
         // check refresh token expired each 15 day - "0 0 15 * 1"
         schedule.scheduleJob("0 0 15 * 1", async () => {
             console.log("--- CHECK REFRESH TOKEN", new Date());
-            const users = await _getUsersRefreshToken();
-            if (!isEmpty(users)) {
-                const transaction = client.transaction();
-                users.forEach((user) => {
-                    const activeTokens = _getActiveTokens(user.refreshToken);
-                    if (activeTokens) {
-                        const update = client
-                            .patch(user._id)
-                            .setIfMissing({ refreshToken: [] });
-
-                        if (isEmpty(activeTokens)) {
-                            update.unset(["refreshToken"]);
-                        } else {
-                            update.set({ refreshToken: activeTokens });
-                        }
-
-                        transaction.patch(update);
+            const expiredRefreshTokens: string[] = [];
+            const transaction = client.transaction();
+            await __handler(
+                _getRefreshToken,
+                (token, transaction) => {
+                    const isActive = _checkTokenIsActive(token);
+                    if (!isActive) {
+                        expiredRefreshTokens.push(token);
+                        transaction.delete(token);
                     }
-                });
-                console.log(transaction.toJSON());
+                },
+                transaction
+            );
+
+            if (isEmpty(expiredRefreshTokens)) {
                 await transaction.commit();
+                return;
             }
+
+            for (const token of expiredRefreshTokens) {
+                await __handler(
+                    () => getAccessByRefreshToken(token),
+                    (token, transaction) => {
+                        transaction.delete(token);
+                    },
+                    transaction
+                );
+            }
+            await transaction.commit();
         });
     };
 
-    const _getUsersAccessToken = async () => {
+    const _getAccessToken = async () => {
         try {
-            const data = await client.fetch<
-                Array<{ _id: string; accessToken: string[] }>
-            >(GET_USERS_ACCESS_TOKEN);
+            const data = await client.fetch<Array<{ _id: string }>>(
+                GET_ACCESS_TOKEN
+            );
             return data;
         } catch (error) {
             console.log(error);
         }
     };
 
-    const _getUsersRefreshToken = async () => {
+    const _getRefreshToken = async () => {
         try {
             const data = await client.fetch<
-                Array<{ _id: string; refreshToken: string[] }>
-            >(GET_USERS_REFRESH_TOKEN);
+                Array<{ _id: string; token: string }>
+            >(GET_REFRESH_TOKEN);
             return data;
         } catch (error) {
             console.log(error);
         }
     };
 
-    const _getActiveTokens = (tokens: string[]): string[] => {
-        if (isEmpty(tokens)) {
-            return [];
-        }
-        const activeTokens = tokens.filter((token) => {
-            const { exp } = jwtDecode<{ exp: number }>(token);
-            if (exp * 1000 < Date.now()) {
-                return false;
-            }
-            return true;
-        });
-        return activeTokens;
+    const _checkTokenIsActive = (token: string): boolean => {
+        const { exp } = jwtDecode<{ exp: number }>(token);
+        return exp * 1000 > Date.now();
     };
 
     return {

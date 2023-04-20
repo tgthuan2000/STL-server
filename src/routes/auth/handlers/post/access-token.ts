@@ -4,9 +4,8 @@ import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { msg } from "~/services";
 import {
-    createToken,
-    deleteToken,
-    saveToken,
+    createNewAccessToken,
+    revokeToken,
     verifyRefreshToken,
 } from "~/services/auth";
 
@@ -25,22 +24,22 @@ const accessToken: RequestHandler = async (req, res) => {
         const { _id } = decoded as JwtPayload;
         if (!err) {
             // check token in db
+            const refreshTokenId = await verifyRefreshToken(_id, refreshToken);
 
-            const isVerified = await verifyRefreshToken(_id, refreshToken);
-
-            if (!isVerified) {
+            if (!refreshTokenId) {
                 res.status(STATUS.FORBIDDEN).json(msg(CODE.TOKEN_REVOKED));
                 return;
             }
-
-            const accessToken = createToken(_id, "1h");
-            await saveToken(_id, { accessToken });
+            const { accessToken } = await createNewAccessToken(
+                _id,
+                refreshTokenId
+            );
 
             res.status(STATUS.SUCCESS).json(msg(CODE.SUCCESS, { accessToken }));
             return;
         }
         if (err.message === "jwt expired") {
-            await deleteToken(_id, { refreshToken });
+            await revokeToken(refreshToken);
             res.status(STATUS.FORBIDDEN).json(msg(CODE.REFRESH_TOKEN_EXPIRED));
             return;
         }
