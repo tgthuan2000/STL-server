@@ -11,7 +11,8 @@ import {
     GET_ACTIVE_USER_2FA_BY_ID,
     GET_BASE32_BY_EMAIL,
     GET_PASSWORD_BY_ID,
-    GET_REFRESH_TOKEN_ID_BY_JWT,
+    GET_TOKEN_BY_JWT,
+    GET_TOKEN_BY_USER_ID,
     GET_USER_2FA_BY_ID,
     GET_USER_ACCESS_TOKEN,
     GET_USER_BASE32_2FA_BY_ID,
@@ -159,25 +160,58 @@ export const getAccessByRefreshToken = async (refreshToken: string) => {
     return data;
 };
 
-export const getRefreshTokenIdByJwt = async (refreshTokenJwt: string) => {
-    const data = await client.fetch<string>(GET_REFRESH_TOKEN_ID_BY_JWT, {
+export const getTokenByUserId = async (userId: string) => {
+    const data = await client.fetch<
+        Array<{ _id: string; accessTokens: Array<{ _id: string }> }>
+    >(GET_TOKEN_BY_USER_ID, {
+        userId: userId,
+    });
+    return data;
+};
+
+export const getTokenByJwt = async (refreshTokenJwt: string) => {
+    const data = await client.fetch<{
+        _id: string;
+        accessTokens: Array<{ _id: string }>;
+    }>(GET_TOKEN_BY_JWT, {
         jwt: refreshTokenJwt,
     });
     return data;
 };
 
-export const revokeToken = async (refreshToken: string) => {
+export const _revokeTokenAll = async (userId: string) => {
     try {
-        if (!refreshToken) {
+        if (!userId) {
             return;
         }
 
         const transaction = client.transaction();
+        const refreshTokens = await getTokenByUserId(userId);
 
-        transaction.delete(refreshToken);
+        refreshTokens.forEach((refreshToken) => {
+            transaction.delete(refreshToken._id);
+            refreshToken.accessTokens.forEach((token) => {
+                transaction.delete(token._id);
+            });
+        });
 
-        const accessTokens = await getAccessByRefreshToken(refreshToken);
+        const response = await transaction.commit();
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+};
 
+export const revokeToken = async (refreshTokenId: string) => {
+    try {
+        if (!refreshTokenId) {
+            return;
+        }
+
+        const transaction = client.transaction();
+        const accessTokens = await getAccessByRefreshToken(refreshTokenId);
+
+        transaction.delete(refreshTokenId);
         accessTokens?.forEach((token) => {
             transaction.delete(token._id);
         });
@@ -196,14 +230,10 @@ export const revokeTokenJwt = async (refreshTokenJwt: string) => {
         }
 
         const transaction = client.transaction();
+        const refreshToken = await getTokenByJwt(refreshTokenJwt);
 
-        const refreshToken = await getRefreshTokenIdByJwt(refreshTokenJwt);
-
-        transaction.delete(refreshToken);
-
-        const accessTokens = await getAccessByRefreshToken(refreshToken);
-
-        accessTokens?.forEach((token) => {
+        transaction.delete(refreshToken._id);
+        refreshToken.accessTokens?.forEach((token) => {
             transaction.delete(token._id);
         });
 

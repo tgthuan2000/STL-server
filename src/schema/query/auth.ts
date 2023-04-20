@@ -113,8 +113,13 @@ export const GET_ACCESS_TOKEN_BY_REFRESH_TOKEN = groq`
     }
 `;
 
-export const GET_REFRESH_TOKEN_ID_BY_JWT = groq`
-    *[_type == "refreshToken" && token == $jwt][0]._id
+export const GET_TOKEN_BY_JWT = groq`
+    *[_type == "refreshToken" && token == $jwt][0] {
+        _id,
+        "accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] {
+            _id,
+        }
+    }
 `;
 
 export const GET_ACCESS_TOKEN = groq`
@@ -127,5 +132,14 @@ export const GET_REFRESH_TOKEN = groq`
     *[_type == "refreshToken"] {
         _id,
         token
+    }
+`;
+
+export const GET_TOKEN_BY_USER_ID = groq`
+    *[_type == "refreshToken" && user._ref == $userId] {
+        _id,
+        "accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] {
+            _id,
+        }
     }
 `;
