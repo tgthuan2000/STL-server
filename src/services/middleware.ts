@@ -10,7 +10,7 @@ export const verifyToken: RequestHandler = (req, res, next) => {
 
     if (!bearerHeader) {
         // Forbidden
-        res.send(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
+        res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
         return;
     }
 
@@ -18,7 +18,7 @@ export const verifyToken: RequestHandler = (req, res, next) => {
     const bearerToken = bearers[1];
 
     if (!bearerToken) {
-        res.send(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
+        res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
         return;
     }
     // verifies secret and checks exp
