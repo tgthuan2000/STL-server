@@ -1,6 +1,6 @@
 import express from "express";
 import { Controllers } from "~/@types/services";
-import { verifyToken } from "~/services/auth";
+import { verifyToken } from "~/services/middleware";
 import { getRouters } from "~/services/controller";
 import { control } from "./control";
 

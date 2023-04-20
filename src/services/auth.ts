@@ -1,25 +1,25 @@
+import { uuid } from "@sanity/uuid";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import { Request, RequestHandler } from "express";
-import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
-import { get, isEmpty } from "lodash";
-import { CODE } from "~/constant/code";
-import { STATUS } from "~/constant/status";
+import { Request } from "express";
+import jwt from "jsonwebtoken";
+import { get } from "lodash";
+import { ROLE } from "~/constant/role";
 import { client } from "~/plugin/sanity";
 import {
+    GET_ACCESS_TOKEN_BY_REFRESH_TOKEN,
     GET_ACTIVE_USER_2FA_BY_ID,
     GET_BASE32_BY_EMAIL,
-    GET_BASE32_BY_ID,
     GET_PASSWORD_BY_ID,
+    GET_TOKEN_BY_JWT,
+    GET_TOKEN_BY_USER_ID,
     GET_USER_2FA_BY_ID,
     GET_USER_ACCESS_TOKEN,
     GET_USER_BASE32_2FA_BY_ID,
     GET_USER_EMAIL_BY_ID,
     GET_USER_ID_BASE32_BY_ID,
     GET_USER_REFRESH_TOKEN,
-    GET_USER_TOKEN_BY_ID,
 } from "~/schema/query/auth";
-import { msg } from ".";
 
 dotenv.config();
 
@@ -34,31 +34,45 @@ export const comparePassword = async (_id: string, password: string) => {
 export const saveToken = async (
     _id: string,
     token: {
-        accessToken?: string;
-        refreshToken?: string;
+        accessToken: string;
+        refreshToken: { token: string; device: string };
     }
 ) => {
     try {
-        if (!token.accessToken && !token.refreshToken) {
+        if (!token.accessToken || !token.refreshToken) {
             return;
         }
 
         const transaction = client.transaction();
+        const refreshTokenId = uuid();
+        const accessTokenId = uuid();
 
-        if (token.refreshToken) {
-            const patch = client
-                .patch(_id)
-                .setIfMissing({ refreshToken: [] })
-                .append("refreshToken", [token.refreshToken]);
-            transaction.patch(patch);
-        }
-        if (token.accessToken) {
-            const patch = client
-                .patch(_id)
-                .setIfMissing({ accessToken: [] })
-                .append("accessToken", [token.accessToken]);
-            transaction.patch(patch);
-        }
+        // create access token
+        const accessToken = {
+            _type: "accessToken",
+            _id: accessTokenId,
+            token: token.accessToken,
+            refreshToken: {
+                _ref: refreshTokenId,
+                _type: "reference",
+            },
+        };
+        transaction.createIfNotExists(accessToken);
+
+        // create refresh token
+        const refreshToken = {
+            _type: "refreshToken",
+            _id: refreshTokenId,
+            token: token.refreshToken.token,
+            device: token.refreshToken.device,
+            lastAccess: new Date(),
+            user: {
+                _ref: _id,
+                _type: "reference",
+            },
+        };
+        transaction.createIfNotExists(refreshToken);
+
         const response = await transaction.commit();
         return response;
     } catch (error) {
@@ -66,135 +80,129 @@ export const saveToken = async (
     }
 };
 
-export const createToken = (_id: string, expiresIn: string | number = "1h") => {
+export const saveNewAccessToken = async (
+    _id: string,
+    token: { accessToken: string; refreshToken: string }
+) => {
+    try {
+        if (!token.accessToken || !token.refreshToken) {
+            return;
+        }
+
+        const transaction = client.transaction();
+        const id = uuid();
+
+        // create access token
+        const accessToken = {
+            _type: "accessToken",
+            _id: id,
+            token: token.accessToken,
+            refreshToken: {
+                _ref: token.refreshToken,
+                _type: "reference",
+            },
+        };
+        transaction.createIfNotExists(accessToken);
+
+        // update lastAccess refresh token
+        const refreshToken = client.patch(token.refreshToken, {
+            set: { lastAccess: new Date() },
+        });
+        transaction.patch(refreshToken);
+
+        const response = await transaction.commit();
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+const ACCESS_TOKEN_EXPIRED_TIME = "1h";
+const REFRESH_TOKEN_EXPIRED_TIME = "720h";
+const createToken = (_id: string, expiresIn: string | number = "1h") => {
     const token = jwt.sign({ _id }, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn,
     });
     return token;
 };
 
-export const verifyToken: RequestHandler = (req, res, next) => {
-    const bearerHeader = req.headers.authorization;
+export const createAccessRefreshToken = async (
+    _id: string,
+    options: { device: string }
+) => {
+    const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_TIME);
+    const refreshToken = createToken(_id, REFRESH_TOKEN_EXPIRED_TIME);
 
-    if (!bearerHeader) {
-        // Forbidden
-        res.send(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
-        return;
-    }
+    await saveToken(_id, {
+        accessToken,
+        refreshToken: { token: refreshToken, device: options.device ?? "" },
+    });
 
-    const bearers = bearerHeader.split(" ");
-    const bearerToken = bearers[1];
-
-    if (!bearerToken) {
-        res.send(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
-        return;
-    }
-    // verifies secret and checks exp
-
-    const handler: VerifyCallback<string | JwtPayload> = async (
-        err,
-        decoded
-    ) => {
-        if (!err) {
-            // if everything is good, save to request for use in other routes
-            // @ts-ignore
-            req.accessToken = decoded;
-            // @ts-ignore
-            req.token = bearerToken;
-            next();
-            return;
-        }
-
-        if (err.message === "jwt expired") {
-            // delete token in db
-            if (decoded) {
-                const id = get(decoded, "_id");
-                if (id) {
-                    await deleteToken(id, { accessToken: bearerToken });
-                }
-            }
-
-            res.status(STATUS.FORBIDDEN).json(msg(CODE.ACCESS_TOKEN_EXPIRED));
-            return;
-        }
-        // Forbidden
-        res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
-    };
-
-    jwt.verify(bearerToken, process.env.ACCESS_TOKEN_SECRET, handler);
+    return { accessToken, refreshToken };
 };
 
-export const verifyAccessToken: RequestHandler = async (req, res, next) => {
-    const _id = getUserId(req);
-    const token = getUserToken(req);
-
-    if (!token || !_id) {
-        res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
-        return;
-    }
-
-    const data = await client.fetch(GET_USER_ACCESS_TOKEN, { _id });
-
-    const accessTokenIndex = getTokenIndex(data.accessToken, token);
-
-    if (accessTokenIndex === -1) {
-        res.status(STATUS.FORBIDDEN).json(msg(CODE.ACCESS_TOKEN_EXPIRED));
-        return;
-    }
-
-    next();
+export const createNewAccessToken = async (
+    _id: string,
+    refreshTokenId: string
+) => {
+    const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_TIME);
+    await saveNewAccessToken(_id, {
+        accessToken,
+        refreshToken: refreshTokenId,
+    });
+    return { accessToken };
 };
 
 export const verifyRefreshToken = async (_id: string, token: string) => {
-    const data = await client.fetch(GET_USER_REFRESH_TOKEN, { _id });
-    const refreshTokenIndex = getTokenIndex(data.refreshToken, token);
-    return refreshTokenIndex !== -1;
+    const data = await client.fetch<string>(GET_USER_REFRESH_TOKEN, {
+        _id,
+        token,
+    });
+    return data;
 };
 
-export const deleteToken = async (
-    _id: string,
-    token: {
-        accessToken?: string;
-        refreshToken?: string;
-    }
-) => {
+export const getAccessByRefreshToken = async (refreshToken: string) => {
+    const data = await client.fetch<Array<{ _id: string }>>(
+        GET_ACCESS_TOKEN_BY_REFRESH_TOKEN,
+        { token: refreshToken }
+    );
+    return data;
+};
+
+export const getTokenByUserId = async (userId: string) => {
+    const data = await client.fetch<
+        Array<{ _id: string; accessTokens: Array<{ _id: string }> }>
+    >(GET_TOKEN_BY_USER_ID, {
+        userId: userId,
+    });
+    return data;
+};
+
+export const getTokenByJwt = async (refreshTokenJwt: string) => {
+    const data = await client.fetch<{
+        _id: string;
+        accessTokens: Array<{ _id: string }>;
+    }>(GET_TOKEN_BY_JWT, {
+        jwt: refreshTokenJwt,
+    });
+    return data;
+};
+
+export const _revokeTokenAll = async (userId: string) => {
     try {
-        const data = await client.fetch(GET_USER_TOKEN_BY_ID, { _id });
-
-        if (!data) {
-            return;
-        }
-
-        const accessTokenIndex = getTokenIndex(
-            data.accessToken,
-            token.accessToken
-        );
-        const refreshTokenIndex = getTokenIndex(
-            data.refreshToken,
-            token.refreshToken
-        );
-
-        if (accessTokenIndex === -1 && refreshTokenIndex === -1) {
+        if (!userId) {
             return;
         }
 
         const transaction = client.transaction();
+        const refreshTokens = await getTokenByUserId(userId);
 
-        if (accessTokenIndex !== -1) {
-            const patch = client
-                .patch(_id)
-                .setIfMissing({ accessToken: [] })
-                .splice("accessToken", accessTokenIndex, 1);
-            transaction.patch(patch);
-        }
-
-        if (refreshTokenIndex !== -1) {
-            const patch = client
-                .patch(_id)
-                .setIfMissing({ refreshToken: [] })
-                .splice("refreshToken", refreshTokenIndex, 1);
-            transaction.patch(patch);
-        }
+        refreshTokens.forEach((refreshToken) => {
+            transaction.delete(refreshToken._id);
+            refreshToken.accessTokens.forEach((token) => {
+                transaction.delete(token._id);
+            });
+        });
 
         const response = await transaction.commit();
         return response;
@@ -203,12 +211,43 @@ export const deleteToken = async (
     }
 };
 
-export const revokeToken = (_id: string) => {
+export const revokeToken = async (refreshTokenId: string) => {
     try {
-        return client
-            .patch(_id)
-            .setIfMissing({ accessToken: [], refreshToken: [] })
-            .unset(["accessToken", "refreshToken"]);
+        if (!refreshTokenId) {
+            return;
+        }
+
+        const transaction = client.transaction();
+        const accessTokens = await getAccessByRefreshToken(refreshTokenId);
+
+        transaction.delete(refreshTokenId);
+        accessTokens?.forEach((token) => {
+            transaction.delete(token._id);
+        });
+
+        const response = await transaction.commit();
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+export const revokeTokenJwt = async (refreshTokenJwt: string) => {
+    try {
+        if (!refreshTokenJwt) {
+            return;
+        }
+
+        const transaction = client.transaction();
+        const refreshToken = await getTokenByJwt(refreshTokenJwt);
+
+        transaction.delete(refreshToken._id);
+        refreshToken.accessTokens?.forEach((token) => {
+            transaction.delete(token._id);
+        });
+
+        const response = await transaction.commit();
+        return response;
     } catch (error) {
         console.log(error);
     }
@@ -264,7 +303,7 @@ export const getBase32UserIdByEmail = async (email: string) => {
 };
 
 export const getBase32ById = async (_id: string) => {
-    const data = await client.fetch<string>(GET_BASE32_BY_ID, {
+    const data = await client.fetch<string>(GET_USER_BASE32_2FA_BY_ID, {
         _id,
     });
     return data;
@@ -276,4 +315,30 @@ export const getUserIdBase32ById = async (_id: string) => {
         { _id }
     );
     return data;
+};
+
+export const verifyAccessTokenDb = async (token: string) => {
+    const data = await client.fetch(GET_USER_ACCESS_TOKEN, { token });
+    return Boolean(data);
+};
+
+export const signInGoogle = async (data: any) => {
+    const { sub, picture, name, email } = data;
+    const document = {
+        _type: "user",
+        _id: sub,
+        image: picture,
+        userName: name,
+        email,
+        google: JSON.stringify(data),
+        allowSendMail: true,
+        role: {
+            _type: "reference",
+            _ref: ROLE.CLIENT,
+        },
+        active: true,
+    };
+
+    const d = await client.createIfNotExists(document);
+    return d;
 };

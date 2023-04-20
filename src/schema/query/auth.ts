@@ -58,14 +58,10 @@ export const GET_ACTIVE_USER_2FA_BY_ID = groq`
 `;
 
 export const GET_BASE32_BY_EMAIL = groq`
-    *[_type == "user" && email == $email][0]{
-        base32,
-        _id
+    *[_type == "user" && email == $email][0] {
+        _id,
+        base32
     }
-`;
-
-export const GET_BASE32_BY_ID = groq`
-    *[_type == "user" && _id == $_id][0].base32
 `;
 
 export const GET_PASSWORD_BY_ID = groq`
@@ -97,15 +93,11 @@ export const GET_USERS_BIRTHDAY = groq`
 `;
 
 export const GET_USER_ACCESS_TOKEN = groq`
-    *[_type == "user" && _id == $_id][0] {
-        accessToken
-    }
+    *[_type == "accessToken" && token == $token][0]._id
 `;
 
 export const GET_USER_REFRESH_TOKEN = groq`
-    *[_type == "user" && _id == $_id][0] {
-        refreshToken
-    }
+    *[_type == "refreshToken" && user._ref == $_id && token == $token][0]._id
 `;
 
 export const GET_USER_TOKEN_BY_ID = groq`
@@ -115,16 +107,39 @@ export const GET_USER_TOKEN_BY_ID = groq`
     }
 `;
 
-export const GET_USERS_ACCESS_TOKEN = groq`
-    *[_type == "user"] {
+export const GET_ACCESS_TOKEN_BY_REFRESH_TOKEN = groq`
+    *[_type == "accessToken" && refreshToken._ref == $token] {
         _id,
-        accessToken
     }
 `;
 
-export const GET_USERS_REFRESH_TOKEN = groq`
-    *[_type == "user"] {
+export const GET_TOKEN_BY_JWT = groq`
+    *[_type == "refreshToken" && token == $jwt][0] {
         _id,
-        refreshToken
+        "accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] {
+            _id,
+        }
+    }
+`;
+
+export const GET_ACCESS_TOKEN = groq`
+    *[_type == "accessToken"] {
+        _id,
+    }
+`;
+
+export const GET_REFRESH_TOKEN = groq`
+    *[_type == "refreshToken"] {
+        _id,
+        token
+    }
+`;
+
+export const GET_TOKEN_BY_USER_ID = groq`
+    *[_type == "refreshToken" && user._ref == $userId] {
+        _id,
+        "accessTokens": *[_type == "accessToken" && refreshToken._ref == ^._id] {
+            _id,
+        }
     }
 `;

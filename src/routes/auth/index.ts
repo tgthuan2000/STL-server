@@ -1,6 +1,6 @@
 import express from "express";
 import { Controllers } from "~/@types/services";
-import { verifyAccessToken, verifyToken } from "~/services/auth";
+import { verifyAccessToken, verifyToken } from "~/services/middleware";
 import { getRouters } from "~/services/controller";
 import { control } from "./control";
 
@@ -17,6 +17,7 @@ const controllers: Controllers = {
         [verifyToken, "verify-2fa"],
         "2fa",
         [verifyToken, "disabled-2fa"],
+        [verifyToken, "revoke-token"],
         [verifyToken, "logout"],
     ],
     get: [

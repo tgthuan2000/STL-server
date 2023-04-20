@@ -1,5 +1,5 @@
 import { RequestControl } from "~/@types/services";
-import { profile, _2FA } from "./handlers/get";
+import { _2FA, profile } from "./handlers/get";
 import {
     accessToken,
     changePassword,
@@ -7,10 +7,11 @@ import {
     disabled2FA,
     google,
     logout,
+    _2FA as post_2FA,
+    revokeToken,
     setPassword,
     signIn,
     verify2FA,
-    _2FA as post_2FA,
 } from "./handlers/post";
 
 export const control: RequestControl = {
@@ -24,6 +25,7 @@ export const control: RequestControl = {
         "sign-in": signIn,
         "2fa": post_2FA,
         "disabled-2fa": disabled2FA,
+        "revoke-token": revokeToken,
         logout: logout,
     },
     get: {

@@ -4,9 +4,8 @@ import { STATUS } from "~/constant/status";
 import { msg } from "~/services";
 import {
     comparePassword,
-    createToken,
+    createAccessRefreshToken,
     getActiveUserTwoFA,
-    saveToken,
 } from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
@@ -41,10 +40,9 @@ const signIn: RequestHandler = async (req, res) => {
         return;
     }
 
-    const accessToken = createToken(_id, "1h");
-    const refreshToken = createToken(_id, "720h");
-
-    await saveToken(_id, { accessToken, refreshToken });
+    const { accessToken, refreshToken } = await createAccessRefreshToken(_id, {
+        device: "",
+    });
 
     res.status(STATUS.SUCCESS).json(
         msg(CODE.SUCCESS, { accessToken, refreshToken })
