@@ -5,10 +5,9 @@ import { STATUS } from "~/constant/status";
 import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
 import {
-    createToken,
+    createAccessRefreshToken,
     getBase32ById,
     getUserIdBase32ById,
-    saveToken,
 } from "~/services/auth";
 
 const _2FA: RequestHandler = async (req, res) => {
@@ -49,10 +48,10 @@ const _2FA: RequestHandler = async (req, res) => {
     const verified = TwoFA.verifyToken(code, base32);
 
     if (verified) {
-        const accessToken = createToken(id, "1h");
-        const refreshToken = createToken(id, "720h");
-
-        await saveToken(id, { accessToken, refreshToken });
+        const { accessToken, refreshToken } = await createAccessRefreshToken(
+            id,
+            { device: "" }
+        );
 
         res.status(STATUS.SUCCESS).json(
             msg(CODE.SUCCESS, { accessToken, refreshToken })

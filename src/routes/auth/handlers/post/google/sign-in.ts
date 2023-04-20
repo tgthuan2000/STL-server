@@ -1,11 +1,13 @@
 import { RequestHandler } from "express";
 import jwtDecode from "jwt-decode";
 import { CODE } from "~/constant/code";
-import { ROLE } from "~/constant/role";
 import { STATUS } from "~/constant/status";
-import { client } from "~/plugin/sanity";
 import { msg } from "~/services";
-import { createToken, getUserTwoFA, saveToken } from "~/services/auth";
+import {
+    createAccessRefreshToken,
+    getUserTwoFA,
+    signInGoogle,
+} from "~/services/auth";
 
 const signIn: RequestHandler = async (req, res) => {
     const { credential } = req.body;
@@ -18,23 +20,7 @@ const signIn: RequestHandler = async (req, res) => {
     const data = jwtDecode(credential) as any;
 
     if (data) {
-        const { sub, picture, name, email } = data;
-        const document = {
-            _type: "user",
-            _id: sub,
-            image: picture,
-            userName: name,
-            email,
-            google: JSON.stringify(data),
-            allowSendMail: true,
-            role: {
-                _type: "reference",
-                _ref: ROLE.CLIENT,
-            },
-            active: true,
-        };
-
-        const d = await client.createIfNotExists(document);
+        const d = await signInGoogle(data);
 
         // check active
         if (!d.active) {
@@ -50,10 +36,10 @@ const signIn: RequestHandler = async (req, res) => {
             return;
         }
 
-        const accessToken = createToken(d._id, "1h");
-        const refreshToken = createToken(d._id, "720h");
-
-        await saveToken(d._id, { accessToken, refreshToken });
+        const { accessToken, refreshToken } = await createAccessRefreshToken(
+            d._id,
+            { device: "" }
+        );
 
         res.status(STATUS.SUCCESS).json(
             msg(CODE.SUCCESS, { accessToken, refreshToken })
