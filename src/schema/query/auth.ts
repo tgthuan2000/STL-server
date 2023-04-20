@@ -93,7 +93,7 @@ export const GET_USERS_BIRTHDAY = groq`
 `;
 
 export const GET_USER_ACCESS_TOKEN = groq`
-    *[_type == "accessToken" && _id == $token][0]._id
+    *[_type == "accessToken" && token == $token][0]._id
 `;
 
 export const GET_USER_REFRESH_TOKEN = groq`

@@ -1,9 +1,9 @@
+import { uuid } from "@sanity/uuid";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import { get } from "lodash";
-import moment from "moment";
 import { ROLE } from "~/constant/role";
 import { client } from "~/plugin/sanity";
 import {
@@ -44,13 +44,16 @@ export const saveToken = async (
         }
 
         const transaction = client.transaction();
+        const refreshTokenId = uuid();
+        const accessTokenId = uuid();
 
         // create access token
         const accessToken = {
             _type: "accessToken",
-            _id: token.accessToken,
+            _id: accessTokenId,
+            token: token.accessToken,
             refreshToken: {
-                _ref: token.refreshToken.token,
+                _ref: refreshTokenId,
                 _type: "reference",
             },
         };
@@ -59,15 +62,16 @@ export const saveToken = async (
         // create refresh token
         const refreshToken = {
             _type: "refreshToken",
+            _id: refreshTokenId,
             token: token.refreshToken.token,
             device: token.refreshToken.device,
-            lastAccess: moment().format(),
+            lastAccess: new Date(),
             user: {
                 _ref: _id,
                 _type: "reference",
             },
         };
-        transaction.create(refreshToken);
+        transaction.createIfNotExists(refreshToken);
 
         const response = await transaction.commit();
         return response;
@@ -86,11 +90,13 @@ export const saveNewAccessToken = async (
         }
 
         const transaction = client.transaction();
+        const id = uuid();
 
         // create access token
         const accessToken = {
             _type: "accessToken",
-            _id: token.accessToken,
+            _id: id,
+            token: token.accessToken,
             refreshToken: {
                 _ref: token.refreshToken,
                 _type: "reference",
@@ -100,7 +106,7 @@ export const saveNewAccessToken = async (
 
         // update lastAccess refresh token
         const refreshToken = client.patch(token.refreshToken, {
-            set: { lastAccess: moment().format() },
+            set: { lastAccess: new Date() },
         });
         transaction.patch(refreshToken);
 
@@ -137,19 +143,22 @@ export const createAccessRefreshToken = async (
 
 export const createNewAccessToken = async (
     _id: string,
-    refreshToken: string
+    refreshTokenId: string
 ) => {
     const accessToken = createToken(_id, ACCESS_TOKEN_EXPIRED_TIME);
-    await saveNewAccessToken(_id, { accessToken, refreshToken });
+    await saveNewAccessToken(_id, {
+        accessToken,
+        refreshToken: refreshTokenId,
+    });
     return { accessToken };
 };
 
 export const verifyRefreshToken = async (_id: string, token: string) => {
-    const data = await client.fetch<{ _id: string }>(GET_USER_REFRESH_TOKEN, {
+    const data = await client.fetch<string>(GET_USER_REFRESH_TOKEN, {
         _id,
         token,
     });
-    return Boolean(data);
+    return data;
 };
 
 export const getAccessByRefreshToken = async (refreshToken: string) => {
