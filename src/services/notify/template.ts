@@ -26,6 +26,7 @@ export const notify = async (data: NotifyData, url: string) => {
             _type: "assignNotify",
             notify: { _type: "reference", _ref: notifyId },
             user: { _type: "reference", _ref: d._id },
+            sentMail: d.sendMail,
             read: false,
         }),
         sendMailDocument: (d) => ({
