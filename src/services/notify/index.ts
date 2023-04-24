@@ -6,8 +6,10 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 import {
     CreateNotifyAssign,
     CreateSendMail,
+    DeleteNotifyAssign,
     NotificationResult,
     NotifyTransaction,
+    UpdateNotifyAssign,
     UserEmail,
 } from "~/@types/notification";
 import { transporter } from "~/plugin/email";
@@ -20,14 +22,14 @@ export const NotifyService = (() => {
     console.log("services/notify");
 
     const service: NotificationResult = {
-        transaction<T>(data: T) {
+        transaction<T>(data: T, notifyId?: string) {
             let _data: T | null = data,
                 __: Transaction | null = null,
                 _notifyId: string | null = null,
                 _sentUsers: Array<Promise<SMTPTransport.SentMessageInfo>> = [];
 
             const _createNotifyId = () => {
-                _notifyId = uuid();
+                _notifyId = notifyId ?? uuid();
             };
 
             const _createTrans = () => {
@@ -48,6 +50,32 @@ export const NotifyService = (() => {
                 if (!isEmpty(data)) {
                     data?.forEach((d) => {
                         __?.create(document(d));
+                    });
+                }
+            };
+
+            const _updateNotifyAssign: UpdateNotifyAssign = (data) => {
+                const userEmails: UserEmail[] = [];
+                if (!isEmpty(data)) {
+                    data.forEach((d) => {
+                        if (!d.sentMail) {
+                            const sendMail = d.user.sendMail;
+                            if (sendMail) {
+                                userEmails.push(d.user);
+                            }
+                            __?.patch(d._id, {
+                                set: { sentMail: sendMail },
+                            });
+                        }
+                    });
+                }
+                return userEmails;
+            };
+
+            const _deleteNotifyAssign: DeleteNotifyAssign = (data) => {
+                if (!isEmpty(data)) {
+                    data.forEach((d) => {
+                        __?.delete(d);
                     });
                 }
             };
@@ -115,9 +143,34 @@ export const NotifyService = (() => {
                     }
                     return this;
                 },
+                async updateNotifyAssign(cb) {
+                    const { assignUsers, document, sendMailDocument } = cb(
+                        _data,
+                        _notifyId
+                    );
+
+                    const { creates, deletes, updates } = assignUsers;
+
+                    _createNotifyAssign(creates, document);
+                    const usersNotify = _updateNotifyAssign(updates);
+                    _deleteNotifyAssign(deletes);
+
+                    _createSendMail(
+                        creates.concat(usersNotify),
+                        sendMailDocument,
+                        (d) => _sentUsers.push(d)
+                    );
+
+                    return this;
+                },
                 createNotify(cb) {
                     const { document } = cb(_data, _notifyId);
                     __.createIfNotExists(document);
+                    return this;
+                },
+                updateNotify(cb) {
+                    const { document } = cb(_data);
+                    __.patch(_notifyId, { set: document });
                     return this;
                 },
                 async execute() {

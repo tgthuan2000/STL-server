@@ -1,48 +1,92 @@
 import dotenv from "dotenv";
-import { NotifyData } from "~/@types/notification";
+import { AssignUsers, NotifyData } from "~/@types/notification";
 import { IUserBirthDay } from "~/@types/schedule";
 import { NotifyService } from ".";
 import { notificationTemplate } from "../email-template";
 
 dotenv.config();
 
-export const notify = async (data: NotifyData, url: string) => {
-    const transaction = NotifyService.transaction<NotifyData>(data);
+type UpdateNotifyData = Omit<NotifyData, "users" | "sendAll"> & {
+    user: AssignUsers;
+};
 
-    transaction.createNotify((data, notifyId) => ({
-        document: {
-            _id: notifyId,
-            _type: "notify",
-            title: data.title,
-            description: data.description,
-            content: data.content,
-        },
-    }));
+export const notify = {
+    create: async (data: NotifyData, url: string) => {
+        const transaction = NotifyService.transaction<NotifyData>(data);
 
-    await transaction.createNotifyAssign((data, notifyId) => ({
-        sendAll: data.sendAll,
-        assignUsers: data.users,
-        document: (d) => ({
-            _type: "assignNotify",
-            notify: { _type: "reference", _ref: notifyId },
-            user: { _type: "reference", _ref: d._id },
-            sentMail: d.sendMail,
-            read: false,
-        }),
-        sendMailDocument: (d) => ({
-            from: process.env.EMAIL_USER,
-            to: d.email,
-            subject: "Thông báo từ STL Admin",
-            text: "Thông báo từ STL Admin nè",
-            html: notificationTemplate({
-                userName: d.userName,
-                url,
-                notifyId,
+        transaction.createNotify((data, notifyId) => ({
+            document: {
+                _id: notifyId,
+                _type: "notify",
+                title: data.title,
+                description: data.description,
+                content: data.content,
+            },
+        }));
+
+        await transaction.createNotifyAssign((data, notifyId) => ({
+            sendAll: data.sendAll,
+            assignUsers: data.users,
+            document: (d) => ({
+                _type: "assignNotify",
+                notify: { _type: "reference", _ref: notifyId },
+                user: { _type: "reference", _ref: d._id },
+                sentMail: Boolean(d.allowSendMail && d.sendMail),
+                read: false,
             }),
-        }),
-    }));
+            sendMailDocument: (d) => ({
+                from: process.env.EMAIL_USER,
+                to: d.email,
+                subject: "Thông báo từ STL Admin",
+                text: "Thông báo từ STL Admin nè",
+                html: notificationTemplate({
+                    userName: d.userName,
+                    url,
+                    notifyId,
+                }),
+            }),
+        }));
 
-    await transaction.execute();
+        await transaction.execute();
+    },
+    put: async (notifyId: string, data: UpdateNotifyData, url: string) => {
+        const transaction = NotifyService.transaction<UpdateNotifyData>(
+            data,
+            notifyId
+        );
+
+        transaction.updateNotify((data) => ({
+            document: {
+                title: data.title,
+                description: data.description,
+                content: data.content,
+            },
+        }));
+
+        await transaction.updateNotifyAssign((data, notifyId) => ({
+            assignUsers: data.user,
+            document: (d) => ({
+                _type: "assignNotify",
+                notify: { _type: "reference", _ref: notifyId },
+                user: { _type: "reference", _ref: d._id },
+                sentMail: Boolean(d.allowSendMail && d.sendMail),
+                read: false,
+            }),
+            sendMailDocument: (d) => ({
+                from: process.env.EMAIL_USER,
+                to: d.email,
+                subject: "Thông báo từ STL Admin",
+                text: "Thông báo từ STL Admin nè",
+                html: notificationTemplate({
+                    userName: d.userName,
+                    url,
+                    notifyId,
+                }),
+            }),
+        }));
+
+        await transaction.execute();
+    },
 };
 
 export const notifySchedule = async (data: IUserBirthDay) => {

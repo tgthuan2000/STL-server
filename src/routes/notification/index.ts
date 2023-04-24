@@ -12,6 +12,7 @@ const controllers: Controllers = {
         [verifyToken, "web-push"],
     ],
     get: [],
+    put: [[verifyToken, "assign/:id"]],
     delete: [],
 };
 
