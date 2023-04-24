@@ -25,6 +25,7 @@ const controllers: Controllers = {
         [verifyToken, "2fa"],
     ],
     delete: [],
+    put: [],
 };
 
 getRouters(controllers, router, control);

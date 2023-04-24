@@ -33,4 +33,5 @@ export const control: RequestControl = {
         "2fa": _2FA,
     },
     delete: {},
+    put: {},
 };

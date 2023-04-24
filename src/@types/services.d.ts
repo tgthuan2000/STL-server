@@ -5,7 +5,7 @@ export type Controllers = Record<
     Array<string | Array<string | RequestHandler>>
 >;
 
-export type RequestKey = "post" | "get" | "delete";
+export type RequestKey = "post" | "get" | "delete" | "put";
 export interface Control {
     [key: string]: RequestHandler;
 }
