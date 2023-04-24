@@ -4,4 +4,5 @@ export const control: RequestControl = {
     get: {},
     post: {},
     delete: {},
+    put: {},
 };

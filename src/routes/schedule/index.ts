@@ -9,6 +9,7 @@ const controllers: Controllers = {
     post: [],
     get: [],
     delete: [],
+    put: [],
 };
 
 getRouters(controllers, router, control);
