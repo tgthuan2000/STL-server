@@ -8,6 +8,7 @@ import {
     google,
     logout,
     _2FA as post_2FA,
+    register,
     revokeToken,
     setPassword,
     signIn,
@@ -27,6 +28,7 @@ export const control: RequestControl = {
         "disabled-2fa": disabled2FA,
         "revoke-token": revokeToken,
         logout: logout,
+        register: register,
     },
     get: {
         profile: profile,
