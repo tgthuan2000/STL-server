@@ -29,14 +29,14 @@ const register: RequestHandler = async (req, res) => {
     const hashPassword = bcrypt.hashSync(password);
 
     // create user
-    // await client.create({
-    //     _type: "user",
-    //     email,
-    //     userName,
-    //     password: hashPassword,
-    //     role: { _type: "reference", _ref: role },
-    //     active,
-    // });
+    await client.create({
+        _type: "user",
+        email,
+        userName,
+        password: hashPassword,
+        role: { _type: "reference", _ref: role },
+        active,
+    });
 
     res.status(STATUS.SUCCESS).json(msg(CODE.SUCCESS));
 };
