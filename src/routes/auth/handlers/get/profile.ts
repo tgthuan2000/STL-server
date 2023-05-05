@@ -12,7 +12,7 @@ const profile: RequestHandler = async (req, res) => {
     const data = await client.fetch(GET_USER_BY_ID, { _id });
 
     if (data && data.active === false) {
-        res.status(STATUS.SUCCESS).json(msg(CODE.INACTIVE_ACCOUNT));
+        res.status(STATUS.BAD_REQUEST).json(msg(CODE.INACTIVE_ACCOUNT));
         return;
     }
 
