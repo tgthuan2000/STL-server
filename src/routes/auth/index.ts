@@ -1,7 +1,7 @@
 import express from "express";
 import { Controllers } from "~/@types/services";
-import { verifyAccessToken, verifyToken } from "~/services/middleware";
 import { getRouters } from "~/services/controller";
+import { verifyAccessToken, verifyToken } from "~/services/middleware";
 import { control } from "./control";
 
 const router = express.Router();
@@ -19,6 +19,7 @@ const controllers: Controllers = {
         [verifyToken, "disabled-2fa"],
         [verifyToken, "revoke-token"],
         [verifyToken, "logout"],
+        [verifyToken, "register"],
     ],
     get: [
         [verifyToken, verifyAccessToken, "profile"],

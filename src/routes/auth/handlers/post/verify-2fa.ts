@@ -4,7 +4,7 @@ import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
 import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
-import { getUserId } from "~/services/auth";
+import { getAllRefreshTokenByUserId, getUserId } from "~/services/auth";
 
 // GLOBAL check with postman
 const verify2FA: RequestHandler = async (req, res) => {
@@ -29,14 +29,24 @@ const verify2FA: RequestHandler = async (req, res) => {
         try {
             const transaction = client.transaction();
             transaction.patch(TwoFA.saveSanity(id, base32));
+
+            // revoke all refresh tokens
+            const refreshTokens = await getAllRefreshTokenByUserId(id);
+
+            refreshTokens.forEach((refreshToken) => {
+                transaction.delete(refreshToken._id);
+                refreshToken.accessTokens.forEach((token) => {
+                    transaction.delete(token._id);
+                });
+            });
+
             await transaction.commit();
 
             const backupCodes = TwoFA.generateBackupCodes(base32);
-            res.status(STATUS.SUCCESS).json({
-                code: CODE.SUCCESS,
-                verified,
-                backupCodes,
-            });
+
+            res.status(STATUS.SUCCESS).json(
+                msg(CODE.SUCCESS, { verified, backupCodes })
+            );
         } catch (error) {
             console.log(error);
         }
