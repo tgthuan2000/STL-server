@@ -105,7 +105,7 @@ export const GET_USER_REFRESH_TOKEN = groq`
 `;
 
 export const GET_ACCESS_TOKEN_BY_REFRESH_TOKEN = groq`
-    *[_type == "accessToken" && refreshToken._ref == $token && ${NON_EXPIRED_TIME}] {
+    *[_type == "accessToken" && refreshToken._ref == $token] {
         _id,
     }
 `;
