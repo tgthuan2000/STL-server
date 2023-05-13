@@ -11,7 +11,13 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(" ") ?? [];
+let allowedOrigins: any[] = [];
+try {
+    allowedOrigins = JSON.parse(process.env.ALLOWED_ORIGINS);
+} catch (error) {
+    console.log(error);
+}
+
 console.log("CORS:", allowedOrigins);
 app.use(
     cors({
