@@ -14,7 +14,11 @@ const port = process.env.PORT || 8000;
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",").map(
     (origin) => origin
 );
-console.log("Allow origins:", allowedOrigins, process.env.ALLOWED_ORIGINS);
+console.log(
+    "Allow origins:",
+    allowedOrigins,
+    process.env.ALLOWED_ORIGINS.split(",")
+);
 app.use(
     cors({
         origin: (origin, callback) => {
