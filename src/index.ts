@@ -10,18 +10,11 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8000;
-
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",").map(
-    (origin) => origin
-);
-
+console.log(process.env.ALLOW_ORIGINS.split(","));
 app.use(
     cors({
-        origin: (origin, callback) => {
-            allowedOrigins.includes(origin)
-                ? callback(null, true)
-                : callback(new Error("Not allowed by CORS"));
-        },
+        origin: process.env.ALLOW_ORIGINS.split(","),
+        credentials: true,
     })
 );
 app.use(express.json());
