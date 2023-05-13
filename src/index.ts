@@ -11,12 +11,11 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",") ?? [];
-
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(" ") ?? [];
+console.log("CORS:", allowedOrigins);
 app.use(
     cors({
         origin: (origin, callback) => {
-            console.log(origin, allowedOrigins.includes(origin));
             allowedOrigins.includes(origin)
                 ? callback(null, true)
                 : callback(new Error("Not allowed by CORS"));
