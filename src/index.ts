@@ -10,10 +10,11 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8000;
-
+console.log(process.env.ALLOW_ORIGINS.split(","));
 app.use(
     cors({
-        origin: process.env.ALLOW_ORIGIN,
+        origin: process.env.ALLOW_ORIGINS.split(","),
+        credentials: true,
     })
 );
 app.use(express.json());
