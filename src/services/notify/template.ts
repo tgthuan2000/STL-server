@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import { AssignUsers, NotifyData } from "~/@types/notification";
-import { IUserBirthDay } from "~/@types/schedule";
+import { ISchedule, IUserBirthDay } from "~/@types/schedule";
 import { NotifyService } from ".";
-import { notificationTemplate } from "../email-template";
+import { notificationTemplate, scheduleTemplate } from "../email-template";
 
 dotenv.config();
 
@@ -124,6 +124,51 @@ export const notifySchedule = async (data: IUserBirthDay) => {
             subject: "Thông báo từ STL Admin",
             text: "Thông báo từ STL Admin nè",
             html: `Chúc mừng sinh nhật <b>${d.userName}</b>`,
+        }),
+    }));
+
+    await transaction.execute();
+};
+
+export const notifyScheduleJob = async (data: ISchedule) => {
+    const transaction = NotifyService.transaction<ISchedule>(data);
+
+    transaction.createNotify((data, notifyId) => ({
+        document: {
+            _id: notifyId,
+            _type: "notify",
+            title: "Thông báo lịch trình",
+            description: data.title,
+            content: data.description,
+        },
+    }));
+
+    await transaction.createNotifyAssign((data, notifyId) => ({
+        assignUsers: [
+            {
+                _id: data.user._id,
+                allowSendMail: data.user.allowSendMail,
+                sendMail: data.user.allowSendMail,
+                email: data.user.email,
+                userName: data.user.userName,
+            },
+        ],
+        document: (d) => ({
+            _type: "assignNotify",
+            notify: { _type: "reference", _ref: notifyId },
+            user: { _type: "reference", _ref: d._id },
+            read: false,
+        }),
+        sendMailDocument: (d) => ({
+            from: process.env.EMAIL_USER,
+            to: d.email,
+            subject: "Thông báo từ STL Admin",
+            text: data.title,
+            html: scheduleTemplate({
+                userName: d.userName,
+                title: data.title,
+                description: data.description,
+            }),
         }),
     }));
 
