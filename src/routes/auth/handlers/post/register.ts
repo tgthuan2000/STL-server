@@ -4,6 +4,7 @@ import { isUndefined } from "lodash";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { validateUserEmail } from "~/schema/api/auth";
 import { msg } from "~/services";
 
 const register: RequestHandler = async (req, res) => {
@@ -15,10 +16,7 @@ const register: RequestHandler = async (req, res) => {
     }
 
     // check email exist
-    const users = await client.fetch(
-        'count(*[_type == "user" && email == $email])',
-        { email }
-    );
+    const users = await validateUserEmail(email);
 
     if (users > 0) {
         res.status(STATUS.SUCCESS).json(msg(CODE.EMAIL_EXIST));

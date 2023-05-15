@@ -2,9 +2,10 @@ import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { getAllRefreshTokenByUserId } from "~/schema/api/auth";
 import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
-import { getAllRefreshTokenByUserId, getUserId } from "~/services/auth";
+import { getUserId } from "~/services/auth";
 
 // GLOBAL check with postman
 const verify2FA: RequestHandler = async (req, res) => {

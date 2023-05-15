@@ -1,9 +1,10 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { getUserEmail } from "~/schema/api/auth";
 import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
-import { getUserEmail, getUserId } from "~/services/auth";
+import { getUserId } from "~/services/auth";
 
 // GLOBAL check with postman
 const _2FA: RequestHandler = async (req, res) => {

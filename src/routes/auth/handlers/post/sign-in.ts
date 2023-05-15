@@ -1,11 +1,11 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { getActiveUserTwoFA } from "~/schema/api/auth";
 import { msg } from "~/services";
 import {
     comparePassword,
     createAccessRefreshToken,
-    getActiveUserTwoFA,
     getUserAgent,
 } from "~/services/auth";
 

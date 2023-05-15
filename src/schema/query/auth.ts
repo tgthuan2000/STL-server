@@ -1,5 +1,9 @@
 import groq from "groq";
 
+export const GET_COUNT_USER_BY_EMAIL = groq`
+    'count(*[_type == "user" && email == $email])'
+`;
+
 export const GET_USER_BY_EMAIL = groq`
     *[_type == "user" && email == $email] {
         _id,
@@ -82,7 +86,7 @@ export const GET_USERS = groq`
 `;
 
 export const GET_USERS_BIRTHDAY = groq`
-    *[_type == "user" && defined(birthDay)] {
+    *[_type == "user" && defined(birthDay) && birthDay match $birthDay] {
         _id,
         userName,
         email,

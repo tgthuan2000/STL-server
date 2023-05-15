@@ -4,30 +4,19 @@ import dotenv from "dotenv";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import { get } from "lodash";
-import { IRefreshToken } from "~/@types/auth";
 import { ROLE } from "~/constant/role";
 import { client } from "~/plugin/sanity";
 import {
-    GET_ACCESS_TOKEN_BY_REFRESH_TOKEN,
-    GET_ACTIVE_USER_2FA_BY_ID,
-    GET_ALL_REFRESH_TOKEN_BY_USER_ID,
-    GET_BASE32_BY_EMAIL,
-    GET_PASSWORD_BY_ID,
-    GET_REFRESH_TOKEN_BY_JWT,
-    GET_USER_2FA_BY_ID,
-    GET_USER_ACCESS_TOKEN,
-    GET_USER_BASE32_2FA_BY_ID,
-    GET_USER_EMAIL_BY_ID,
-    GET_USER_ID_BASE32_BY_ID,
-    GET_USER_REFRESH_TOKEN,
-} from "~/schema/query/auth";
+    getAccessByRefreshToken,
+    getAllRefreshTokenByUserId,
+    getPasswordByUserId,
+    getRefreshTokenByJwt,
+} from "~/schema/api/auth";
 
 dotenv.config();
 
 export const comparePassword = async (_id: string, password: string) => {
-    const data = await client.fetch<{ password: string }>(GET_PASSWORD_BY_ID, {
-        _id,
-    });
+    const data = await getPasswordByUserId(_id);
     const isMatch = bcrypt.compareSync(password, data.password);
     return isMatch;
 };
@@ -178,37 +167,6 @@ export const createNewAccessToken = async (
     return { accessToken };
 };
 
-export const verifyRefreshToken = async (_id: string, token: string) => {
-    const data = await client.fetch<string>(GET_USER_REFRESH_TOKEN, {
-        _id,
-        token,
-    });
-    return data;
-};
-
-export const getAccessByRefreshToken = async (refreshToken: string) => {
-    const data = await client.fetch<Array<{ _id: string }>>(
-        GET_ACCESS_TOKEN_BY_REFRESH_TOKEN,
-        { token: refreshToken }
-    );
-    return data;
-};
-
-export const getAllRefreshTokenByUserId = async (userId: string) => {
-    const data = await client.fetch<Array<IRefreshToken>>(
-        GET_ALL_REFRESH_TOKEN_BY_USER_ID,
-        { userId: userId }
-    );
-    return data;
-};
-
-export const getRefreshTokenByJwt = async (refreshTokenJwt: string) => {
-    const data = await client.fetch<IRefreshToken>(GET_REFRESH_TOKEN_BY_JWT, {
-        jwt: refreshTokenJwt,
-    });
-    return data;
-};
-
 export const revokeTokenAll = async (userId: string) => {
     try {
         if (!userId) {
@@ -294,57 +252,6 @@ export const getUserId = (req: Request) => {
 
 export const getUserAgent = (req: Request) => {
     return req.headers["user-agent"] ?? "";
-};
-
-export const getUserEmail = async (_id: string) => {
-    const data = await client.fetch<string>(GET_USER_EMAIL_BY_ID, { _id });
-    return data;
-};
-
-export const getUserBase32TwoFA = async (_id: string) => {
-    const data = await client.fetch<string>(GET_USER_BASE32_2FA_BY_ID, { _id });
-    return data;
-};
-
-export const getUserTwoFA = async (_id: string) => {
-    const data = await client.fetch<string>(GET_USER_2FA_BY_ID, { _id });
-    return data;
-};
-
-export const getActiveUserTwoFA = async (_id: string) => {
-    const data = await client.fetch<{ twoFA: string; active: boolean }>(
-        GET_ACTIVE_USER_2FA_BY_ID,
-        { _id }
-    );
-    return data;
-};
-
-export const getBase32UserIdByEmail = async (email: string) => {
-    const data = await client.fetch<{ base32: string; _id: string }>(
-        GET_BASE32_BY_EMAIL,
-        { email }
-    );
-    return data;
-};
-
-export const getBase32ById = async (_id: string) => {
-    const data = await client.fetch<string>(GET_USER_BASE32_2FA_BY_ID, {
-        _id,
-    });
-    return data;
-};
-
-export const getUserIdBase32ById = async (_id: string) => {
-    const data = await client.fetch<{ _id: string; base32: string | null }>(
-        GET_USER_ID_BASE32_BY_ID,
-        { _id }
-    );
-    return data;
-};
-
-export const verifyAccessTokenDb = async (token: string) => {
-    const data = await client.fetch(GET_USER_ACCESS_TOKEN, { token });
-    return Boolean(data);
 };
 
 export const signInGoogle = async (data: any) => {

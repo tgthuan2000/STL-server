@@ -2,9 +2,10 @@ import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { client } from "~/plugin/sanity";
+import { getBase32ById } from "~/schema/api/auth";
 import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
-import { getBase32ById, getUserId } from "~/services/auth";
+import { getUserId } from "~/services/auth";
 
 const disabled2FA: RequestHandler = async (req, res) => {
     const { code } = req.body;

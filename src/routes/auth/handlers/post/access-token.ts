@@ -2,12 +2,9 @@ import { RequestHandler } from "express";
 import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { verifyRefreshToken } from "~/schema/api/auth";
 import { msg } from "~/services";
-import {
-    createNewAccessToken,
-    revokeToken,
-    verifyRefreshToken,
-} from "~/services/auth";
+import { createNewAccessToken, revokeToken } from "~/services/auth";
 
 const accessToken: RequestHandler = async (req, res) => {
     const { refreshToken } = req.body;
