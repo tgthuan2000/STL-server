@@ -1,8 +1,7 @@
 import { RequestHandler } from "express";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
-import { client } from "~/plugin/sanity";
-import { GET_USER_BY_EMAIL } from "~/schema/query/auth";
+import { getUserInfoByEmail } from "~/schema/api/auth";
 import { msg } from "~/services";
 
 // GLOBAL check with postman
@@ -14,9 +13,7 @@ const checkEmail: RequestHandler = async (req, res) => {
         return;
     }
 
-    const data = await client.fetch(GET_USER_BY_EMAIL, {
-        email,
-    });
+    const data = await getUserInfoByEmail(email);
 
     res.status(STATUS.SUCCESS).json(msg(CODE.SUCCESS, data));
 };

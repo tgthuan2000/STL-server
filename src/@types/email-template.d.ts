@@ -4,5 +4,19 @@ interface NotificationTemplateOption {
     notifyId: string;
 }
 export type NotificationTemplate = (
-    option: NotificationTemplateOption
+    options: NotificationTemplateOption
 ) => string;
+
+interface ScheduleTemplateOption {
+    userName: string;
+    title: string;
+    description: string;
+}
+
+export type ScheduleTemplate = (options: ScheduleTemplateOption) => string;
+
+interface NotifyBirthdayOption {
+    userName: string;
+}
+
+export type NotifyBirthdayTemplate = (options: NotifyBirthdayOption) => string;

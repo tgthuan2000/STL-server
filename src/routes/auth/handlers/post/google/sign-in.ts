@@ -2,11 +2,11 @@ import { RequestHandler } from "express";
 import jwtDecode from "jwt-decode";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { getUserTwoFA } from "~/schema/api/auth";
 import { msg } from "~/services";
 import {
     createAccessRefreshToken,
     getUserAgent,
-    getUserTwoFA,
     signInGoogle,
 } from "~/services/auth";
 

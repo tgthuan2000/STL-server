@@ -1,119 +1,76 @@
-import { SanityDocument } from "@sanity/client";
-import jwtDecode from "jwt-decode";
 import { isEmpty } from "lodash";
 import schedule from "node-schedule";
-import { IUserBirthDay } from "~/@types/schedule";
 import { client } from "~/plugin/sanity";
 import {
-    GET_ACCESS_TOKEN_EXPIRED,
-    GET_REFRESH_TOKEN_EXPIRED,
-    GET_USERS_BIRTHDAY,
-} from "~/schema/query/auth";
-import { notifySchedule } from "./notify/template";
-import { IRefreshToken } from "~/@types/auth";
+    getAccessTokenExpired,
+    getRefreshTokenExpired,
+    getUserBirthday,
+} from "~/schema/api/auth";
+import { getScheduleJobOfUsers } from "~/schema/api/schedule";
+import { notifySchedule, notifyScheduleJob } from "./notify/template";
 
 export const ScheduleService = (() => {
     console.log("services/schedule");
 
-    const _jobs: { [x: string]: schedule.Job } = {};
-
-    const _getUsers = async () => {
-        return await client.fetch<IUserBirthDay[]>(GET_USERS_BIRTHDAY);
-    };
-
-    const _scheduleNotify = (data: IUserBirthDay[]) => {
-        data.forEach((user) => {
-            _birthdaySchedule(user);
+    const _log = (result: PromiseSettledResult<void>) => {
+        console.log({
+            status: result.status,
+            time: new Date().toLocaleString(),
         });
     };
 
-    const _getScheduleData = (user: SanityDocument<Record<string, any>>) => ({
-        _id: user._id,
-        allowSendMail: user.allowSendMail,
-        birthDay: user.birthDay,
-        email: user.email,
-        sendMail: user.allowSendMail,
-        userName: user.userName,
-    });
+    const _scheduleBirthdayUser = () => {
+        schedule.scheduleJob("0 23 * * *", async () => {
+            console.log("--- CHECK BIRTHDAY OF USERS", new Date());
+            const users = await getUserBirthday();
 
-    const _watchNewUsers = () => {
-        const sub = client.listen(GET_USERS_BIRTHDAY).subscribe((update) => {
-            if (update.documentId.includes("drafts")) return;
+            if (!isEmpty(users)) {
+                console.log(
+                    "Users have birthday:",
+                    users.map((user) => user.userName).join(", ")
+                );
+                const promises: Promise<void>[] = [];
+                users.forEach((user) => {
+                    promises.push(notifySchedule(user));
+                });
 
-            const user = update.result;
-
-            switch (update.transition) {
-                case "appear":
-                    if (user?.birthDay) {
-                        _birthdaySchedule(_getScheduleData(user));
-                    }
-                    break;
-                case "update":
-                    if (user?.birthDay) {
-                        const job = _checkInJobs(user._id);
-                        if (job) {
-                            const newBirthDay = new Date(user.birthDay);
-                            const oldBirthDay = new Date(job.nextInvocation());
-                            if (newBirthDay !== oldBirthDay) {
-                                _removeJob(user._id);
-                                _birthdaySchedule(_getScheduleData(user));
-                            }
-                        }
-                    }
-                    break;
-                case "disappear":
-                    _removeJob(update.documentId);
-                    break;
+                Promise.allSettled(promises).then((results) => {
+                    results.forEach((result) => _log(result));
+                });
             }
-            // _logJob();
         });
     };
 
-    const _birthdaySchedule = (user: IUserBirthDay) => {
-        const { birthDay } = user;
-        const date = new Date(birthDay);
-        const rule = new schedule.RecurrenceRule();
-        rule.hour = 0;
-        rule.minute = 0;
-        rule.second = 0;
-        rule.date = date.getDate();
-        rule.month = date.getMonth();
+    const _scheduleJobOfUser = () => {
+        schedule.scheduleJob("0 0 * * *", async () => {
+            console.log("--- CHECK SCHEDULE JOB OF USERS", new Date());
+            const scheduleJobs = await getScheduleJobOfUsers();
 
-        const job = schedule.scheduleJob(rule, () => {
-            notifySchedule(user);
-        });
+            if (!isEmpty(scheduleJobs)) {
+                console.log(
+                    "Schedule job of users:",
+                    scheduleJobs
+                        .map((scheduleJob) => scheduleJob.title)
+                        .join(", ")
+                );
 
-        _pushJob(user._id, job);
-    };
+                const promises: Promise<void>[] = [];
+                scheduleJobs.forEach((scheduleJob) => {
+                    promises.push(notifyScheduleJob(scheduleJob));
+                });
 
-    const _pushJob = (key: string, job: schedule.Job) => {
-        _jobs[key] = job;
-    };
-
-    const _removeJob = (_id: string) => {
-        const job = _jobs[_id];
-        if (job) {
-            _jobs[_id].cancel();
-            delete _jobs[_id];
-        }
-    };
-
-    const _checkInJobs = (_id: string) => {
-        return _jobs[_id];
-    };
-
-    const _logJob = () => {
-        Object.keys(_jobs).forEach((key) => {
-            console.log(key, _jobs[key].nextInvocation().toISOString());
+                Promise.allSettled(promises).then((results) => {
+                    results.forEach((result) => _log(result));
+                });
+            }
         });
     };
 
-    const _watchAccessToken = () => {
-        // check access token expired each 1 day - "0 0 * * *"
+    const _scheduleAccessToken = () => {
         schedule.scheduleJob("0 0 * * *", async () => {
             console.log("--- CHECK ACCESS TOKEN", new Date());
 
-            const accessTokens = await _getAccessTokenExpired();
+            const accessTokens = await getAccessTokenExpired();
 
             if (!isEmpty(accessTokens)) {
                 const transaction = client.transaction();
@@ -125,12 +82,11 @@ export const ScheduleService = (() => {
         });
     };
 
-    const _watchRefreshToken = () => {
-        // check refresh token expired each 15 day - "0 0 15 * 1"
-        schedule.scheduleJob("0 0 15 * 1", async () => {
+    const _scheduleRefreshToken = () => {
+        schedule.scheduleJob("0 0 15 * *", async () => {
             console.log("--- CHECK REFRESH TOKEN", new Date());
 
-            const refreshTokens = await _getRefreshTokenExpired();
+            const refreshTokens = await getRefreshTokenExpired();
 
             if (!isEmpty(refreshTokens)) {
                 const transaction = client.transaction();
@@ -145,47 +101,19 @@ export const ScheduleService = (() => {
         });
     };
 
-    const _getAccessTokenExpired = async () => {
-        try {
-            const data = await client.fetch<Array<{ _id: string }>>(
-                GET_ACCESS_TOKEN_EXPIRED
-            );
-            return data;
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const _getRefreshTokenExpired = async () => {
-        try {
-            const data = await client.fetch<Array<IRefreshToken>>(
-                GET_REFRESH_TOKEN_EXPIRED
-            );
-            return data;
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    const _checkTokenIsActive = (token: string): boolean => {
-        const { exp } = jwtDecode<{ exp: number }>(token);
-        return exp * 1000 > Date.now();
-    };
-
     return {
+        watchScheduleOfUsers() {
+            console.log("--- SCHEDULE JOB OF USERS");
+            _scheduleJobOfUser();
+        },
         watchBirthDay() {
             console.log("--- SCHEDULE BIRTHDAY NOTIFY");
-
-            _getUsers().then((users) => {
-                _scheduleNotify(users);
-                _watchNewUsers();
-                // _logJob();
-            });
+            _scheduleBirthdayUser();
         },
         watchToken() {
             console.log("--- SCHEDULE TOKEN");
-            _watchRefreshToken();
-            _watchAccessToken();
+            _scheduleRefreshToken();
+            _scheduleAccessToken();
         },
     };
 })();
