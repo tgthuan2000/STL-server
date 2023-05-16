@@ -14,3 +14,9 @@ interface ScheduleTemplateOption {
 }
 
 export type ScheduleTemplate = (options: ScheduleTemplateOption) => string;
+
+interface NotifyBirthdayOption {
+    userName: string;
+}
+
+export type NotifyBirthdayTemplate = (options: NotifyBirthdayOption) => string;

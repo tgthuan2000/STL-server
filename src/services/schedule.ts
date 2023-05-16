@@ -12,6 +12,13 @@ import { notifySchedule, notifyScheduleJob } from "./notify/template";
 export const ScheduleService = (() => {
     console.log("services/schedule");
 
+    const _log = (result: PromiseSettledResult<void>) => {
+        console.log({
+            status: result.status,
+            time: new Date().toLocaleString(),
+        });
+    };
+
     const _scheduleBirthdayUser = () => {
         schedule.scheduleJob("0 23 * * *", async () => {
             console.log("--- CHECK BIRTHDAY OF USERS", new Date());
@@ -27,7 +34,9 @@ export const ScheduleService = (() => {
                     promises.push(notifySchedule(user));
                 });
 
-                await Promise.allSettled(promises);
+                Promise.allSettled(promises).then((results) => {
+                    results.forEach((result) => _log(result));
+                });
             }
         });
     };
@@ -39,7 +48,7 @@ export const ScheduleService = (() => {
 
             if (!isEmpty(scheduleJobs)) {
                 console.log(
-                    "Users have birthday:",
+                    "Schedule job of users:",
                     scheduleJobs
                         .map((scheduleJob) => scheduleJob.title)
                         .join(", ")
@@ -50,7 +59,9 @@ export const ScheduleService = (() => {
                     promises.push(notifyScheduleJob(scheduleJob));
                 });
 
-                await Promise.allSettled(promises);
+                Promise.allSettled(promises).then((results) => {
+                    results.forEach((result) => _log(result));
+                });
             }
         });
     };
@@ -90,9 +101,11 @@ export const ScheduleService = (() => {
         });
     };
 
-    const _Schedule = () => {};
-
     return {
+        watchScheduleOfUsers() {
+            console.log("--- SCHEDULE JOB OF USERS");
+            _scheduleJobOfUser();
+        },
         watchBirthDay() {
             console.log("--- SCHEDULE BIRTHDAY NOTIFY");
             _scheduleBirthdayUser();

@@ -117,8 +117,8 @@ export const getUserIdBase32ById = (_id: string) => {
     return data;
 };
 
-export const verifyAccessTokenDb = (token: string) => {
-    const data = client.fetch(GET_USER_ACCESS_TOKEN, { token });
+export const verifyAccessTokenDb = async (token: string) => {
+    const data = await client.fetch(GET_USER_ACCESS_TOKEN, { token });
     return Boolean(data);
 };
 

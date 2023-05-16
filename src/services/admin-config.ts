@@ -1,5 +1,6 @@
 export interface IAdminConfig {
     canNotifyBirthday: boolean;
+    canNotifyScheduleOfUsers: boolean;
 }
 
 export const readAdminConfig = async (): Promise<IAdminConfig> => {
@@ -7,5 +8,6 @@ export const readAdminConfig = async (): Promise<IAdminConfig> => {
 
     return {
         canNotifyBirthday: true,
+        canNotifyScheduleOfUsers: true,
     };
 };

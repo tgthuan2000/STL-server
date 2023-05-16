@@ -2,7 +2,11 @@ import dotenv from "dotenv";
 import { AssignUsers, NotifyData } from "~/@types/notification";
 import { ISchedule, IUserBirthDay } from "~/@types/schedule";
 import { NotifyService } from ".";
-import { notificationTemplate, scheduleTemplate } from "../email-template";
+import {
+    notificationTemplate,
+    notifyBirthdayTemplate,
+    scheduleTemplate,
+} from "../email-template";
 
 dotenv.config();
 
@@ -123,7 +127,9 @@ export const notifySchedule = async (data: IUserBirthDay) => {
             to: d.email,
             subject: "Thông báo từ STL Admin",
             text: "Thông báo từ STL Admin nè",
-            html: `Chúc mừng sinh nhật <b>${d.userName}</b>`,
+            html: notifyBirthdayTemplate({
+                userName: d.userName,
+            }),
         }),
     }));
 
