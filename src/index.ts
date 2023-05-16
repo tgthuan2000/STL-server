@@ -28,6 +28,9 @@ app.listen(port, () => {
         if (adminConfig.canNotifyBirthday) {
             ScheduleService.watchBirthDay();
         }
+        if (adminConfig.canNotifyScheduleOfUsers) {
+            ScheduleService.watchScheduleOfUsers();
+        }
 
         ScheduleService.watchToken();
         WebPushService.watchNotify();

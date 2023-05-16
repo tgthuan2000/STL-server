@@ -2,14 +2,10 @@ import { RequestHandler } from "express";
 import jwtDecode from "jwt-decode";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
+import { getBase32ById, getUserIdBase32ById } from "~/schema/api/auth";
 import { msg } from "~/services";
 import { TwoFA } from "~/services/2fa";
-import {
-    createAccessRefreshToken,
-    getBase32ById,
-    getUserAgent,
-    getUserIdBase32ById,
-} from "~/services/auth";
+import { createAccessRefreshToken, getUserAgent } from "~/services/auth";
 
 const _2FA: RequestHandler = async (req, res) => {
     const { _id, code, credential } = req.body;

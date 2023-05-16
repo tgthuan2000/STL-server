@@ -3,7 +3,8 @@ import jwt, { JwtPayload, VerifyCallback } from "jsonwebtoken";
 import { CODE } from "~/constant/code";
 import { STATUS } from "~/constant/status";
 import { msg } from ".";
-import { getUserId, getUserToken, verifyAccessTokenDb } from "./auth";
+import { getUserId, getUserToken } from "./auth";
+import { verifyAccessTokenDb } from "~/schema/api/auth";
 
 export const verifyToken: RequestHandler = (req, res, next) => {
     const bearerHeader = req.headers.authorization;
