@@ -18,6 +18,7 @@ const controllers: Controllers = {
         "2fa",
         [verifyToken, "disabled-2fa"],
         [verifyToken, "revoke-token"],
+        [verifyToken, "revoke-all"],
         [verifyToken, "logout"],
         [verifyToken, "register"],
     ],
