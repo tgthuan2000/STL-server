@@ -18,6 +18,11 @@ const accessToken: RequestHandler = async (req, res) => {
         err,
         decoded
     ) => {
+        if (!decoded) {
+            res.status(STATUS.FORBIDDEN).json(msg(CODE.FORBIDDEN));
+            return;
+        }
+
         const { _id } = decoded as JwtPayload;
         if (!err) {
             // check token in db
